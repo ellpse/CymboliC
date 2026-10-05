@@ -1,7 +1,7 @@
 #include <iostream>
 #include "CymboliC.h"
-
+//differentiate, integrate.
 int main() {
-  std::cout << integrate("3x^4 + csc(x)");
+  std::cout << differentiate("ln(x)");
   return 0;
 }
