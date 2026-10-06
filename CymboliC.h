@@ -62,6 +62,7 @@
  * differentiate("sin(2*x)")
  * differentiate("x*sin(x)")
  * differentiate("x^2+sin(x)")
+ * differentiate("x^2", true)
  *
  * INTEGRATION
  * integrate("x")
@@ -88,27 +89,38 @@
  * integrate("csc^2(x)")
  * integrate("sech^2(x)")
  * integrate("csch^2(x)")
+ * integrate("x^2", true)
  *
  * EVALUATION
  * evaluate("x", 5)
+ * evaluate("x", 5, true)
  * evaluate("x^2", 5)
+ * evaluate("x^2", 5, true)
  * evaluate("2*x^2+3*x", 5)
  * evaluate("sin(x)", 5)
  * evaluate("sqrt(x)", 5)
  *
  * DEFINITE INTEGRATION
+ * integrate("x", 0, 5)
+ * integrate("x", 0, 5, true)
+ * integrate("x^2", 0, 3)
+ * integrate("x^2", 0, 3, true)
+ * integrate("2*x^2", 4.5, 3.14)
+ * integrate("sin(x)", 0, pi)
+ * integrate("exp(x)", 0, 1)
  * defintegral("x", 0, 5)
- * defintegral("x^2", 0, 3)
- * defintegral("2*x^2", 4.5, 3.14)
- * defintegral("sin(x)", 0, pi)
- * defintegral("exp(x)", 0, 1)
+ * defintegral("x", 0, 5, true)
+ *
+ * ROOTS
+ * roots("x^2-4")
+ * roots("x^2-4", true)
  *
  * INTEGRATION RETURNS AN ANTIDERIVATIVE
  * integrate("x^2")
  * x^3/3+C
  *
  * DEFINITE INTEGRATION RETURNS A NUMBER
- * defintegral("x^2", 0, 3)
+ * integrate("x^2", 0, 3)
  * 9
  *
  * FUNCTION NAMES
@@ -116,6 +128,9 @@
  * integrate
  * evaluate
  * defintegral
+ * roots
+ *
+ * CLOSED FORM IS FALSE BY DEFAULT
  *
  * ALL FUNCTION ARGUMENTS ARE STRINGS
  * ALL NUMERIC EVALUATION VALUES ARE FLOATS
@@ -137,6 +152,7 @@
 #include <cctype>
 #include <cmath>
 #include <complex>
+#include <cstdlib>
 #include <functional>
 #include <iomanip>
 #include <limits>
@@ -145,6 +161,7 @@
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 namespace cymbolic {
@@ -221,10 +238,9 @@ namespace cymbolic {
   inline std::string removeSpaces(const std::string& s) {
     std::string r;
 
-    for (char c : s) {
+    for (char c : s)
       if (!std::isspace((unsigned char)c))
         r += c;
-    }
 
     return r;
   }
@@ -237,8 +253,7 @@ namespace cymbolic {
       size_t p = 0;
       std::stod(s, &p);
       return p == s.size();
-    }
-    catch (...) {
+    } catch (...) {
       return false;
     }
   }
@@ -307,12 +322,17 @@ namespace cymbolic {
     }
 
     r.push_back(s.substr(start));
-
     return r;
   }
 
-  inline std::string differentiate(const std::string&);
-  inline std::string integrate(const std::string&);
+  inline std::string differentiateRaw(const std::string&);
+  inline std::string integrateRaw(const std::string&);
+  inline float evaluateRaw(const std::string&, float);
+  inline float defintegralRaw(
+    const std::string&,
+    float,
+    float
+  );
 
   inline std::string differentiateFunction(
     const std::string& fn,
@@ -331,7 +351,7 @@ namespace cymbolic {
       p += arg.size();
     }
 
-    std::string id = differentiate(arg);
+    std::string id = differentiateRaw(arg);
 
     if (id == "1")
       return d;
@@ -369,16 +389,15 @@ namespace cymbolic {
       return "-(" + differentiateTerm(s.substr(1)) + ")";
 
     if (findOperator(s, '+') != std::string::npos)
-      return differentiate(s);
+      return differentiateRaw(s);
 
     for (size_t i = 1; i < s.size(); ++i) {
       if (
         s[i] == '-' &&
         s[i - 1] != '^' &&
         s[i - 1] != '('
-      ) {
-        return differentiate(s);
-      }
+      )
+        return differentiateRaw(s);
     }
 
     size_t p = findOperator(s, '/');
@@ -388,13 +407,13 @@ namespace cymbolic {
       std::string b = s.substr(p + 1);
 
       return "((" +
-      differentiate(a) +
+      differentiateRaw(a) +
       ")*(" +
       b +
       ")-(" +
       a +
       ")*(" +
-      differentiate(b) +
+      differentiateRaw(b) +
       "))/(" +
       b +
       ")^2";
@@ -406,8 +425,8 @@ namespace cymbolic {
       std::string a = s.substr(0, p);
       std::string b = s.substr(p + 1);
 
-      std::string da = differentiate(a);
-      std::string db = differentiate(b);
+      std::string da = differentiateRaw(a);
+      std::string db = differentiateRaw(b);
 
       if (da == "0")
         return "(" + a + ")*(" + db + ")";
@@ -438,7 +457,7 @@ namespace cymbolic {
         if (std::abs(n) < 1e-12)
           return "0";
 
-        std::string db = differentiate(b);
+        std::string db = differentiateRaw(b);
 
         if (db == "0")
           return "0";
@@ -492,12 +511,11 @@ namespace cymbolic {
       if (
         xp + 1 < s.size() &&
         s[xp + 1] == '^'
-      ) {
+      )
         q = s.substr(xp + 2);
-      }
 
-      if (c.empty())
-        c = "1";
+        if (c.empty())
+          c = "1";
 
       if (c == "-")
         c = "-1";
@@ -518,7 +536,7 @@ namespace cymbolic {
     return "r not found";
   }
 
-  inline std::string differentiate(
+  inline std::string differentiateRaw(
     const std::string& expression
   ) {
     std::string s = removeSpaces(expression);
@@ -614,7 +632,7 @@ namespace cymbolic {
           s.size() - p0 - 2
         );
 
-        std::string da = differentiate(arg);
+        std::string da = differentiateRaw(arg);
 
         if (fn == "ln") {
           if (da == "1")
@@ -650,63 +668,31 @@ namespace cymbolic {
           }
         }
 
-        if (fn == "asin" && da == "1") {
-          return arg +
-          "*asin(" +
-          arg +
-          ")+sqrt(1-(" +
-          arg +
-          ")^2)";
-        }
+        if (fn == "asin" && da == "1")
+          return arg + "*asin(" + arg +
+          ")+sqrt(1-(" + arg + ")^2)";
 
-        if (fn == "acos" && da == "1") {
-          return arg +
-          "*acos(" +
-          arg +
-          ")-sqrt(1-(" +
-          arg +
-          ")^2)";
-        }
+        if (fn == "acos" && da == "1")
+          return arg + "*acos(" + arg +
+          ")-sqrt(1-(" + arg + ")^2)";
 
-        if (fn == "atan" && da == "1") {
-          return arg +
-          "*atan(" +
-          arg +
-          ")-0.5*ln(1+(" +
-          arg +
-          ")^2)";
-        }
+        if (fn == "atan" && da == "1")
+          return arg + "*atan(" + arg +
+          ")-0.5*ln(1+(" + arg + ")^2)";
 
-        if (fn == "acot" && da == "1") {
-          return arg +
-          "*acot(" +
-          arg +
-          ")+0.5*ln(1+(" +
-          arg +
-          ")^2)";
-        }
+        if (fn == "acot" && da == "1")
+          return arg + "*acot(" + arg +
+          ")+0.5*ln(1+(" + arg + ")^2)";
 
-        if (fn == "asec" && da == "1") {
-          return arg +
-          "*asec(" +
-          arg +
-          ")-ln(abs(" +
-          arg +
-          "+sqrt((" +
-          arg +
-          ")^2-1)))";
-        }
+        if (fn == "asec" && da == "1")
+          return arg + "*asec(" + arg +
+          ")-ln(abs(" + arg +
+          "+sqrt((" + arg + ")^2-1)))";
 
-        if (fn == "acsc" && da == "1") {
-          return arg +
-          "*acsc(" +
-          arg +
-          ")+ln(abs(" +
-          arg +
-          "+sqrt((" +
-          arg +
-          ")^2-1)))";
-        }
+        if (fn == "acsc" && da == "1")
+          return arg + "*acsc(" + arg +
+          ")+ln(abs(" + arg +
+          "+sqrt((" + arg + ")^2-1)))";
 
         auto it = integralRules.find(fn);
 
@@ -722,10 +708,12 @@ namespace cymbolic {
             std::abs(std::stod(da)) > 1e-12
           ) {
             return "(" +
-            formatNumber(1 / std::stod(da)) +
-              ")*(" +
-              r +
-              ")";
+            formatNumber(
+              1 / std::stod(da)
+            ) +
+            ")*(" +
+            r +
+            ")";
           }
         }
       }
@@ -755,8 +743,7 @@ namespace cymbolic {
             std::stod(b),
                    std::stod(q)
           )
-        ) +
-        "*x";
+        ) + "*x";
       }
     }
 
@@ -786,7 +773,7 @@ namespace cymbolic {
     return "r not found";
   }
 
-  inline std::string integrate(
+  inline std::string integrateRaw(
     const std::string& expression
   ) {
     std::string s = removeSpaces(expression);
@@ -817,7 +804,7 @@ namespace cymbolic {
     return r.empty() ? "C" : r + "+C";
   }
 
-  inline float evaluate(
+  inline float evaluateRaw(
     const std::string& input,
     float xvalue
   ) {
@@ -898,23 +885,24 @@ namespace cymbolic {
 
     primary = [&]() -> double {
       if (p >= s.size())
-        throw std::runtime_error("invalid expression");
+        throw std::runtime_error(
+          "invalid expression"
+        );
 
       if (s[p] == '(') {
         ++p;
-
         double v = expr();
 
         if (
           p >= s.size() ||
           s[p] != ')'
-        ) {
-          throw std::runtime_error("missing )");
-        }
+        )
+          throw std::runtime_error(
+            "missing )"
+          );
 
-        ++p;
-
-        return v;
+          ++p;
+          return v;
       }
 
       if (
@@ -926,16 +914,17 @@ namespace cymbolic {
         while (
           p < s.size() &&
           (
-            std::isdigit((unsigned char)s[p]) ||
+            std::isdigit(
+              (unsigned char)s[p]
+            ) ||
             s[p] == '.'
           )
-        ) {
+        )
           ++p;
-        }
 
-        return std::stod(
-          s.substr(b, p - b)
-        );
+          return std::stod(
+            s.substr(b, p - b)
+          );
       }
 
       if (std::isalpha((unsigned char)s[p])) {
@@ -943,16 +932,17 @@ namespace cymbolic {
 
         while (
           p < s.size() &&
-          std::isalpha((unsigned char)s[p])
-        ) {
+          std::isalpha(
+            (unsigned char)s[p]
+          )
+        )
           ++p;
-        }
 
-        std::string n =
-        s.substr(b, p - b);
+          std::string n =
+          s.substr(b, p - b);
 
-        if (n == "x")
-          return xvalue;
+          if (n == "x")
+            return xvalue;
 
         if (n == "pi")
           return pi;
@@ -963,29 +953,26 @@ namespace cymbolic {
         if (
           p >= s.size() ||
           s[p] != '('
-        ) {
+        )
           throw std::runtime_error(
             "unknown identifier"
           );
-        }
 
-        ++p;
+          ++p;
+          double a = expr();
 
-        double a = expr();
+          if (
+            p >= s.size() ||
+            s[p] != ')'
+          )
+            throw std::runtime_error(
+              "missing )"
+            );
 
-        if (
-          p >= s.size() ||
-          s[p] != ')'
-        ) {
-          throw std::runtime_error(
-            "missing )"
-          );
-        }
+            ++p;
 
-        ++p;
-
-        if (n == "sin")
-          return std::sin(a);
+            if (n == "sin")
+              return std::sin(a);
 
         if (n == "cos")
           return std::cos(a);
@@ -1176,23 +1163,17 @@ namespace cymbolic {
     if (
       a.symbolic.empty() &&
       b.symbolic.empty()
-    ) {
+    )
       return makeExact(
         a.n * b.d + b.n * a.d,
         a.d * b.d
       );
-    }
 
-    Exact r;
-
-    r.symbolic =
-    "(" +
-    exactString(a) +
-    ")+(" +
-    exactString(b) +
-    ")";
-
-    return r;
+      Exact r;
+      r.symbolic =
+      "(" + exactString(a) +
+      ")+(" + exactString(b) + ")";
+      return r;
   }
 
   inline Exact exactSub(
@@ -1202,23 +1183,17 @@ namespace cymbolic {
     if (
       a.symbolic.empty() &&
       b.symbolic.empty()
-    ) {
+    )
       return makeExact(
         a.n * b.d - b.n * a.d,
         a.d * b.d
       );
-    }
 
-    Exact r;
-
-    r.symbolic =
-    "(" +
-    exactString(a) +
-    ")-(" +
-    exactString(b) +
-    ")";
-
-    return r;
+      Exact r;
+      r.symbolic =
+      "(" + exactString(a) +
+      ")-(" + exactString(b) + ")";
+      return r;
   }
 
   inline Exact exactMul(
@@ -1228,23 +1203,17 @@ namespace cymbolic {
     if (
       a.symbolic.empty() &&
       b.symbolic.empty()
-    ) {
+    )
       return makeExact(
         a.n * b.n,
         a.d * b.d
       );
-    }
 
-    Exact r;
-
-    r.symbolic =
-    "(" +
-    exactString(a) +
-    ")*(" +
-    exactString(b) +
-    ")";
-
-    return r;
+      Exact r;
+      r.symbolic =
+      "(" + exactString(a) +
+      ")*(" + exactString(b) + ")";
+      return r;
   }
 
   inline Exact exactDiv(
@@ -1254,23 +1223,17 @@ namespace cymbolic {
     if (
       a.symbolic.empty() &&
       b.symbolic.empty()
-    ) {
+    )
       return makeExact(
         a.n * b.d,
         a.d * b.n
       );
-    }
 
-    Exact r;
-
-    r.symbolic =
-    "(" +
-    exactString(a) +
-    ")/(" +
-    exactString(b) +
-    ")";
-
-    return r;
+      Exact r;
+      r.symbolic =
+      "(" + exactString(a) +
+      ")/(" + exactString(b) + ")";
+      return r;
   }
 
   inline std::string simplifySqrtInteger(
@@ -1282,11 +1245,7 @@ namespace cymbolic {
     long long outside = 1;
     long long inside = n;
 
-    for (
-      long long i = 2;
-    i * i <= inside;
-    ++i
-    ) {
+    for (long long i = 2; i * i <= inside; ++i) {
       while (inside % (i * i) == 0) {
         inside /= i * i;
         outside *= i;
@@ -1315,23 +1274,19 @@ namespace cymbolic {
   ) {
     if (!a.symbolic.empty()) {
       Exact r;
-
       r.symbolic =
       "sqrt(" +
       exactString(a) +
       ")";
-
     return r;
     }
 
     if (a.n < 0) {
       Exact r;
-
       r.symbolic =
       "sqrt(" +
       exactString(a) +
       ")";
-
     return r;
     }
 
@@ -1348,26 +1303,21 @@ namespace cymbolic {
     if (
       sn * sn == a.n &&
       sd * sd == a.d
-    ) {
+    )
       return makeExact(sn, sd);
-    }
 
-    if (a.d == 1) {
+      if (a.d == 1) {
+        Exact r;
+        r.symbolic =
+        simplifySqrtInteger(a.n);
+        return r;
+      }
+
       Exact r;
-
       r.symbolic =
-      simplifySqrtInteger(a.n);
-
-      return r;
-    }
-
-    Exact r;
-
-    r.symbolic =
-    "sqrt(" +
-    exactString(a) +
-    ")";
-
+      "sqrt(" +
+      exactString(a) +
+      ")";
     return r;
   }
 
@@ -1385,7 +1335,7 @@ namespace cymbolic {
       if (p == 0)
         return makeExact(1);
 
-      if (p < 0) {
+      if (p < 0)
         return exactDiv(
           makeExact(1),
                         exactPow(
@@ -1393,7 +1343,6 @@ namespace cymbolic {
                           makeExact(-p)
                         )
         );
-      }
 
       Exact r = makeExact(1);
 
@@ -1404,14 +1353,9 @@ namespace cymbolic {
     }
 
     Exact r;
-
     r.symbolic =
-    "(" +
-    exactString(a) +
-    ")^(" +
-    exactString(b) +
-    ")";
-
+    "(" + exactString(a) +
+    ")^(" + exactString(b) + ")";
     return r;
   }
 
@@ -1436,30 +1380,26 @@ namespace cymbolic {
       if (
         n == "sin" &&
         std::abs(v) < 1e-12
-      ) {
+      )
         return makeExact(0);
-      }
 
-      if (
-        n == "cos" &&
-        std::abs(v) < 1e-12
-      ) {
-        return makeExact(1);
-      }
+        if (
+          n == "cos" &&
+          std::abs(v) < 1e-12
+        )
+          return makeExact(1);
 
-      if (
-        n == "tan" &&
-        std::abs(v) < 1e-12
-      ) {
-        return makeExact(0);
-      }
+          if (
+            n == "tan" &&
+            std::abs(v) < 1e-12
+          )
+            return makeExact(0);
 
-      if (
-        n == "exp" &&
-        std::abs(v) < 1e-12
-      ) {
-        return makeExact(1);
-      }
+            if (
+              n == "exp" &&
+              std::abs(v) < 1e-12
+            )
+              return makeExact(1);
     }
 
     if (
@@ -1475,9 +1415,7 @@ namespace cymbolic {
           return makeExact(-1);
 
         Exact r;
-
         r.symbolic = "tan(pi)";
-
         return r;
       }
 
@@ -1491,13 +1429,8 @@ namespace cymbolic {
     }
 
     Exact r;
-
     r.symbolic =
-    n +
-    "(" +
-    exactString(a) +
-    ")";
-
+    n + "(" + exactString(a) + ")";
     return r;
   }
 
@@ -1626,9 +1559,7 @@ namespace cymbolic {
           v.n = -v.n;
         else
           v.symbolic =
-          "-(" +
-          v.symbolic +
-          ")";
+          "-(" + v.symbolic + ")";
 
         return v;
       }
@@ -1650,15 +1581,13 @@ namespace cymbolic {
         if (
           p >= s.size() ||
           s[p] != ')'
-        ) {
+        )
           throw std::runtime_error(
             "missing )"
           );
-        }
 
-        ++p;
-
-        return v;
+          ++p;
+          return v;
       }
 
       if (
@@ -1670,43 +1599,35 @@ namespace cymbolic {
         while (
           p < s.size() &&
           (
-            std::isdigit((unsigned char)s[p]) ||
+            std::isdigit(
+              (unsigned char)s[p]
+            ) ||
             s[p] == '.'
           )
-        ) {
+        )
           ++p;
-        }
 
-        double v =
-        std::stod(
-          s.substr(
-            b,
-            p - b
+          double v =
+          std::stod(
+            s.substr(b, p - b)
+          );
+
+          long long n;
+          long long d;
+
+          if (
+            rationalValue(
+              v,
+              n,
+              d
+            )
           )
-        );
+            return makeExact(n, d);
 
-        long long n;
-        long long d;
-
-        if (
-          rationalValue(
-            v,
-            n,
-            d
-          )
-        ) {
-          return makeExact(n, d);
-        }
-
-        Exact r;
-
-        r.symbolic =
-        s.substr(
-          b,
-          p - b
-        );
-
-        return r;
+            Exact r;
+            r.symbolic =
+            s.substr(b, p - b);
+            return r;
       }
 
       if (
@@ -1721,82 +1642,66 @@ namespace cymbolic {
           std::isalpha(
             (unsigned char)s[p]
           )
-        ) {
+        )
           ++p;
-        }
 
-        std::string n =
-        s.substr(
-          b,
-          p - b
-        );
+          std::string n =
+          s.substr(b, p - b);
 
-        if (n == "x") {
-          long long a;
-          long long b;
+          if (n == "x") {
+            long long a;
+            long long b;
 
-          if (
-            rationalValue(
-              xvalue,
-              a,
-              b
+            if (
+              rationalValue(
+                xvalue,
+                a,
+                b
+              )
             )
-          ) {
-            return makeExact(a, b);
+              return makeExact(a, b);
+
+              Exact r;
+              r.symbolic =
+              formatNumber(xvalue);
+              return r;
           }
 
-          Exact r;
+          if (n == "pi") {
+            Exact r;
+            r.symbolic = "pi";
+            return r;
+          }
 
-          r.symbolic =
-          formatNumber(xvalue);
+          if (n == "e") {
+            Exact r;
+            r.symbolic = "e";
+            return r;
+          }
 
-          return r;
-        }
+          if (
+            p >= s.size() ||
+            s[p] != '('
+          )
+            throw std::runtime_error(
+              "unknown identifier"
+            );
 
-        if (n == "pi") {
-          Exact r;
+            ++p;
 
-          r.symbolic = "pi";
+            Exact a = expr();
 
-          return r;
-        }
+            if (
+              p >= s.size() ||
+              s[p] != ')'
+            )
+              throw std::runtime_error(
+                "missing )"
+              );
 
-        if (n == "e") {
-          Exact r;
+              ++p;
 
-          r.symbolic = "e";
-
-          return r;
-        }
-
-        if (
-          p >= s.size() ||
-          s[p] != '('
-        ) {
-          throw std::runtime_error(
-            "unknown identifier"
-          );
-        }
-
-        ++p;
-
-        Exact a = expr();
-
-        if (
-          p >= s.size() ||
-          s[p] != ')'
-        ) {
-          throw std::runtime_error(
-            "missing )"
-          );
-        }
-
-        ++p;
-
-        return exactFunction(
-          n,
-          a
-        );
+              return exactFunction(n, a);
       }
 
       throw std::runtime_error(
@@ -1823,10 +1728,9 @@ namespace cymbolic {
         removeSpaces(input),
                          xvalue
       );
-    }
-    catch (...) {
+    } catch (...) {
       return formatNumber(
-        evaluate(
+        evaluateRaw(
           input,
           (float)xvalue
         )
@@ -1837,23 +1741,39 @@ namespace cymbolic {
   inline std::string simplifyClosedExpression(
     const std::string& input
   ) {
-    try {
-      return evaluateClosed(
-        input,
-        0
-      );
+    std::string s = removeSpaces(input);
+    bool changed = true;
+
+    while (changed) {
+      changed = false;
+
+      size_t p;
+
+      while ((p = s.find("x^1")) != std::string::npos) {
+        s.replace(p, 3, "x");
+        changed = true;
+      }
+
+      while ((p = s.find("*1")) != std::string::npos) {
+        s.erase(p, 2);
+        changed = true;
+      }
+
+      while ((p = s.find("1*")) != std::string::npos) {
+        s.erase(p, 2);
+        changed = true;
+      }
     }
-    catch (...) {
-      return input;
-    }
+
+    return s;
   }
 
   inline std::string differentiate(
     const std::string& expression,
-    bool closedForm
+    bool closedForm = false
   ) {
     std::string r =
-    differentiate(expression);
+    differentiateRaw(expression);
 
     if (!closedForm)
       return r;
@@ -1864,15 +1784,20 @@ namespace cymbolic {
     if (r == "1*x^0")
       return "1";
 
+    size_t p;
+
+    while ((p = r.find("^1")) != std::string::npos)
+      r.replace(p, 2, "");
+
     return r;
   }
 
   inline std::string integrate(
     const std::string& expression,
-    bool closedForm
+    bool closedForm = false
   ) {
     std::string r =
-    integrate(expression);
+    integrateRaw(expression);
 
     if (!closedForm)
       return r;
@@ -1880,42 +1805,22 @@ namespace cymbolic {
     if (
       r.size() >= 2 &&
       r.substr(r.size() - 2) == "+C"
-    ) {
+    )
       r = r.substr(
         0,
         r.size() - 2
       );
-    }
 
-    return simplifyClosedExpression(r) + "+C";
+      return simplifyClosedExpression(r) + "+C";
   }
 
-  inline std::string evaluate(
-    const std::string& expression,
-    float xvalue,
-    bool closedForm
-  ) {
-    if (!closedForm)
-      return formatNumber(
-        evaluate(
-          expression,
-          xvalue
-        )
-      );
-
-    return evaluateClosed(
-      expression,
-      xvalue
-    );
-  }
-
-  inline float defintegral(
-    std::string input,
+  inline float defintegralRaw(
+    const std::string& input,
     float lowbound,
     float upbound
   ) {
     std::string expression =
-    integrate(input);
+    integrateRaw(input);
 
     if (expression == "r not found")
       return 0;
@@ -1925,38 +1830,25 @@ namespace cymbolic {
 
     if (p != std::string::npos)
       expression =
-      expression.substr(
-        0,
-        p
-      );
+      expression.substr(0, p);
 
-    return evaluate(
+    return evaluateRaw(
       expression,
       upbound
     ) -
-    evaluate(
+    evaluateRaw(
       expression,
       lowbound
     );
   }
 
-  inline std::string defintegral(
+  inline std::string defintegralClosedRaw(
     const std::string& input,
     float lowbound,
-    float upbound,
-    bool closedForm
+    float upbound
   ) {
-    if (!closedForm)
-      return formatNumber(
-        defintegral(
-          input,
-          lowbound,
-          upbound
-        )
-      );
-
     std::string antiderivative =
-    integrate(input);
+    integrateRaw(input);
 
     if (antiderivative == "r not found")
       return "r not found";
@@ -1986,8 +1878,7 @@ namespace cymbolic {
 
       auto parseRational =
       [](const std::string& s, Exact& out) -> bool {
-        size_t slash =
-        s.find('/');
+        size_t slash = s.find('/');
 
         if (slash == std::string::npos) {
           if (!isNumber(s))
@@ -2002,65 +1893,52 @@ namespace cymbolic {
                            n,
                            d
             )
-          ) {
+          )
             return false;
-          }
 
-          out =
-          makeExact(
-            n,
-            d
-          );
-
-          return true;
+            out = makeExact(n, d);
+            return true;
         }
 
         std::string a =
-        s.substr(
-          0,
-          slash
-        );
+        s.substr(0, slash);
 
         std::string b =
-        s.substr(
-          slash + 1
-        );
+        s.substr(slash + 1);
 
         if (
           !isNumber(a) ||
           !isNumber(b)
-        ) {
+        )
           return false;
-        }
 
-        long long an;
-        long long ad;
-        long long bn;
-        long long bd;
+          long long an;
+          long long ad;
+          long long bn;
+          long long bd;
 
-        if (
-          !rationalValue(
-            std::stod(a),
-                         an,
-                         ad
-          ) ||
-          !rationalValue(
-            std::stod(b),
-                         bn,
-                         bd
-          ) ||
-          bn == 0
-        ) {
-          return false;
-        }
+          if (
+            !rationalValue(
+              std::stod(a),
+                           an,
+                           ad
+            ) ||
+            !rationalValue(
+              std::stod(b),
+                           bn,
+                           bd
+            ) ||
+            bn == 0
+          )
+            return false;
 
-        out =
-        makeExact(
-          an * bd,
-          ad * bn
-        );
+            out =
+            makeExact(
+              an * bd,
+              ad * bn
+            );
 
-        return true;
+            return true;
       };
 
       Exact a;
@@ -2069,56 +1947,97 @@ namespace cymbolic {
       if (
         parseRational(hi, a) &&
         parseRational(lo, b)
-      ) {
+      )
         return exactNormalize(
-          exactSub(
-            a,
-            b
-          )
+          exactSub(a, b)
         );
-      }
 
-      if (lo == "0")
-        return hi;
+        if (lo == "0")
+          return hi;
 
       if (hi == "0")
         return "-(" + lo + ")";
 
       return hi + "-(" + lo + ")";
+    } catch (...) {
+      return formatNumber(
+        defintegralRaw(
+          input,
+          lowbound,
+          upbound
+        )
+      );
     }
-    catch (...) {
-      double v =
-      defintegral(
-        input,
-        lowbound,
-        upbound
+  }
+
+  inline std::string defintegral(
+    const std::string& input,
+    float lowbound,
+    float upbound,
+    bool closedForm = false
+  ) {
+    if (!closedForm)
+      return formatNumber(
+        defintegralRaw(
+          input,
+          lowbound,
+          upbound
+        )
       );
 
-      return formatNumber(v);
-    }
+    return defintegralClosedRaw(
+      input,
+      lowbound,
+      upbound
+    );
+  }
+
+  inline std::string integrate(
+    const std::string& expression,
+    float lowbound,
+    float upbound,
+    bool closedForm = false
+  ) {
+    return defintegral(
+      expression,
+      lowbound,
+      upbound,
+      closedForm
+    );
+  }
+
+  inline std::string evaluate(
+    const std::string& expression,
+    float xvalue,
+    bool closedForm = false
+  ) {
+    if (!closedForm)
+      return formatNumber(
+        evaluateRaw(
+          expression,
+          xvalue
+        )
+      );
+
+    return evaluateClosed(
+      expression,
+      xvalue
+    );
   }
 
   struct Polynomial {
     std::vector<Complex> coefficients;
 
     Polynomial()
-    : coefficients(
-      1,
-      Complex(0, 0)
-    ) {}
+    : coefficients(1, Complex(0, 0)) {}
 
     explicit Polynomial(Complex v)
-    : coefficients(
-      1,
-      v
-    ) {}
+    : coefficients(1, v) {}
 
     explicit Polynomial(
       std::vector<Complex> v
     )
-    : coefficients(
-      std::move(v)
-    ) {
+    : coefficients(std::move(v)) {
       trim();
     }
 
@@ -2128,9 +2047,8 @@ namespace cymbolic {
         std::abs(
           coefficients.back()
         ) < 1e-14
-      ) {
+      )
         coefficients.pop_back();
-      }
     }
 
     int degree() const {
@@ -2141,20 +2059,17 @@ namespace cymbolic {
       return degree() == 0;
     }
 
-    Complex evaluate(
-      Complex x
-    ) const {
+    Complex evaluate(Complex x) const {
       Complex r = 0;
 
       for (
         auto i = coefficients.rbegin();
       i != coefficients.rend();
       ++i
-      ) {
+      )
         r = r * x + *i;
-      }
 
-      return r;
+        return r;
     }
   };
 
@@ -2177,19 +2092,17 @@ namespace cymbolic {
       size_t i = 0;
     i < a.coefficients.size();
     ++i
-    ) {
+    )
       r[i] += a.coefficients[i];
-    }
 
-    for (
-      size_t i = 0;
+      for (
+        size_t i = 0;
     i < b.coefficients.size();
     ++i
-    ) {
-      r[i] += b.coefficients[i];
-    }
+      )
+        r[i] += b.coefficients[i];
 
-    return Polynomial(r);
+        return Polynomial(r);
   }
 
   inline Polynomial subtractPolynomial(
@@ -2211,19 +2124,17 @@ namespace cymbolic {
       size_t i = 0;
     i < a.coefficients.size();
     ++i
-    ) {
+    )
       r[i] += a.coefficients[i];
-    }
 
-    for (
-      size_t i = 0;
+      for (
+        size_t i = 0;
     i < b.coefficients.size();
     ++i
-    ) {
-      r[i] -= b.coefficients[i];
-    }
+      )
+        r[i] -= b.coefficients[i];
 
-    return Polynomial(r);
+        return Polynomial(r);
   }
 
   inline Polynomial multiplyPolynomial(
@@ -2246,11 +2157,10 @@ namespace cymbolic {
         size_t j = 0;
       j < b.coefficients.size();
       ++j
-      ) {
+      )
         r[i + j] +=
         a.coefficients[i] *
         b.coefficients[j];
-      }
     }
 
     return Polynomial(r);
@@ -2311,7 +2221,6 @@ namespace cymbolic {
         (s[p] == '+' || s[p] == '-')
       ) {
         char c = s[p++];
-
         Polynomial q;
 
         if (!term(q))
@@ -2335,7 +2244,6 @@ namespace cymbolic {
         (s[p] == '*' || s[p] == '/')
       ) {
         char c = s[p++];
-
         Polynomial q;
 
         if (!power(q))
@@ -2347,22 +2255,17 @@ namespace cymbolic {
             o,
             q
           );
-        }
-        else {
+        } else {
           if (
             !q.isConstant() ||
             std::abs(
               q.coefficients[0]
             ) < 1e-14
-          ) {
+          )
             return false;
-          }
 
-          for (
-            auto& v : o.coefficients
-          ) {
-            v /= q.coefficients[0];
-          }
+            for (auto& v : o.coefficients)
+              v /= q.coefficients[0];
         }
       }
 
@@ -2384,21 +2287,19 @@ namespace cymbolic {
         if (
           p < s.size() &&
           (s[p] == '+' || s[p] == '-')
-        ) {
+        )
           ++p;
-        }
 
-        while (
-          p < s.size() &&
-          std::isdigit(
-            (unsigned char)s[p]
+          while (
+            p < s.size() &&
+            std::isdigit(
+              (unsigned char)s[p]
+            )
           )
-        ) {
-          ++p;
-        }
+            ++p;
 
-        if (b == p)
-          return false;
+            if (b == p)
+              return false;
 
         int n;
 
@@ -2410,8 +2311,7 @@ namespace cymbolic {
               p - b
             )
           );
-        }
-        catch (...) {
+        } catch (...) {
           return false;
         }
 
@@ -2446,11 +2346,8 @@ namespace cymbolic {
         if (!unary(o))
           return false;
 
-        for (
-          auto& v : o.coefficients
-        ) {
+        for (auto& v : o.coefficients)
           v = -v;
-        }
 
         return true;
       }
@@ -2471,13 +2368,11 @@ namespace cymbolic {
         if (
           p >= s.size() ||
           s[p] != ')'
-        ) {
+        )
           return false;
-        }
 
-        ++p;
-
-        return true;
+          ++p;
+          return true;
       }
 
       if (
@@ -2518,29 +2413,27 @@ namespace cymbolic {
             ) ||
             s[p] == '.'
           )
-        ) {
+        )
           ++p;
-        }
 
-        try {
-          o =
-          Polynomial(
-            Complex(
-              std::stod(
-                s.substr(
-                  b,
-                  p - b
-                )
-              ),
-              0
-            )
-          );
+          try {
+            o =
+            Polynomial(
+              Complex(
+                std::stod(
+                  s.substr(
+                    b,
+                    p - b
+                  )
+                ),
+                0
+              )
+            );
 
-          return true;
-        }
-        catch (...) {
-          return false;
-        }
+            return true;
+          } catch (...) {
+            return false;
+          }
       }
 
       if (
@@ -2555,35 +2448,34 @@ namespace cymbolic {
           std::isalpha(
             (unsigned char)s[p]
           )
-        ) {
+        )
           ++p;
-        }
 
-        std::string n =
-        s.substr(
-          b,
-          p - b
-        );
-
-        if (n == "pi") {
-          o =
-          Polynomial(
-            Complex(pi, 0)
+          std::string n =
+          s.substr(
+            b,
+            p - b
           );
 
-          return true;
-        }
+          if (n == "pi") {
+            o =
+            Polynomial(
+              Complex(pi, 0)
+            );
 
-        if (n == "e") {
-          o =
-          Polynomial(
-            Complex(e, 0)
-          );
+            return true;
+          }
 
-          return true;
-        }
+          if (n == "e") {
+            o =
+            Polynomial(
+              Complex(e, 0)
+            );
 
-        return false;
+            return true;
+          }
+
+          return false;
       }
 
       return false;
@@ -2597,7 +2489,6 @@ namespace cymbolic {
     const Polynomial& input
   ) {
     Polynomial p = input;
-
     p.trim();
 
     int n = p.degree();
@@ -2619,7 +2510,6 @@ namespace cymbolic {
       v /= lead;
 
     Roots r(n);
-
     double radius = 1;
 
     for (int i = 0; i < n; ++i) {
@@ -2696,7 +2586,7 @@ namespace cymbolic {
     return r;
   }
 
-  inline Roots roots(
+  inline Roots rootsRaw(
     const std::string& expression
   ) {
     Polynomial p;
@@ -2706,13 +2596,12 @@ namespace cymbolic {
         expression,
         p
       )
-    ) {
+    )
       throw std::runtime_error(
         "bad input"
       );
-    }
 
-    return polynomialRoots(p);
+      return polynomialRoots(p);
   }
 
   inline std::string formatComplexClosed(
@@ -2728,14 +2617,13 @@ namespace cymbolic {
                     n,
                     d
       )
-    ) {
+    )
       return exactString(
         makeExact(n, d)
       );
-    }
 
-    if (std::abs(z.imag()) < 1e-10)
-      return formatNumber(z.real());
+      if (std::abs(z.imag()) < 1e-10)
+        return formatNumber(z.real());
 
     return "(" +
     formatNumber(z.real()) +
@@ -2744,186 +2632,587 @@ namespace cymbolic {
         ")*i";
   }
 
-  inline std::vector<std::string> roots(
-    const std::string& expression,
-    bool closedForm
+  inline bool exactInteger(
+    double v,
+    long long& out
   ) {
-    if (!closedForm) {
-      Roots r = roots(expression);
+    if (!std::isfinite(v))
+      return false;
 
-      std::vector<std::string> o;
-
-      for (auto& z : r)
-        o.push_back(
-          formatComplexClosed(z)
-        );
-
-      return o;
-    }
-
-    Polynomial p;
+    double r = std::round(v);
 
     if (
-      !parsePolynomial(
-        expression,
-        p
+      std::abs(v - r) > 1e-10 ||
+      std::abs(r) > 9000000000000000.0
+    )
+      return false;
+
+      out = static_cast<long long>(r);
+      return true;
+  }
+
+  inline long long integerAbs(
+    long long v
+  ) {
+    return v < 0 ? -v : v;
+  }
+
+  inline std::vector<long long> integerDivisors(
+    long long n
+  ) {
+    std::vector<long long> r;
+
+    n = integerAbs(n);
+
+    if (n == 0)
+      return {0};
+
+    for (long long i = 1; i <= n / i; ++i) {
+      if (n % i == 0) {
+        r.push_back(i);
+
+        if (i != n / i)
+          r.push_back(n / i);
+      }
+    }
+
+    return r;
+  }
+
+  inline std::string exactQuadraticRootString(
+    long long a,
+    long long b,
+    long long c,
+    bool plus
+  ) {
+    long long g =
+    gcdll(
+      gcdll(a, b),
+          c
+    );
+
+    if (g > 1) {
+      a /= g;
+      b /= g;
+      c /= g;
+    }
+
+    long long d =
+    b * b -
+    4LL * a * c;
+
+    if (d == 0)
+      return exactString(
+        makeExact(
+          -b,
+          2LL * a
+        )
+      );
+
+    if (d > 0) {
+      long long r =
+      static_cast<long long>(
+        std::sqrt(
+          static_cast<long double>(d)
+        )
+      );
+
+      if (r * r == d) {
+        return exactString(
+          makeExact(
+            plus ? -b + r : -b - r,
+            2LL * a
+          )
+        );
+      }
+
+      long long den = 2LL * a;
+      long long nb = -b;
+      std::string sign =
+      plus ? "+" : "-";
+
+      if (den < 0) {
+        den = -den;
+        nb = -nb;
+        sign =
+        plus ? "-" : "+";
+      }
+
+      std::string first =
+      nb < 0
+      ? "-" + std::to_string(-nb)
+      : std::to_string(nb);
+
+      return "(" +
+      first +
+      sign +
+      "sqrt(" +
+      std::to_string(d) +
+      "))/" +
+      std::to_string(den);
+    }
+
+    long long nd = -d;
+
+    long long r =
+    static_cast<long long>(
+      std::sqrt(
+        static_cast<long double>(nd)
       )
-    ) {
-      throw std::runtime_error(
-        "bad input"
+    );
+
+    long long den = 2LL * a;
+    long long nb = -b;
+    std::string sign =
+    plus ? "+" : "-";
+
+    if (den < 0) {
+      den = -den;
+      nb = -nb;
+      sign =
+      plus ? "-" : "+";
+    }
+
+    std::string real =
+    std::to_string(nb);
+
+    if (r * r == nd) {
+      if (nb == 0 && r == den)
+        return plus ? "i" : "-i";
+
+      if (nb == 0)
+        return
+        "sqrt(" +
+        std::to_string(nd) +
+        ")" +
+        (plus ? "*i/" : "*-i/") +
+        std::to_string(den);
+
+      return "(" +
+      real +
+      sign +
+      "sqrt(" +
+      std::to_string(nd) +
+      ")*i)/" +
+      std::to_string(den);
+    }
+
+    return "(" +
+    real +
+    sign +
+    "sqrt(" +
+    std::to_string(nd) +
+    ")*i)/" +
+    std::to_string(den);
+  }
+
+  inline std::vector<std::string> exactQuadraticRoots(
+    long long a,
+    long long b,
+    long long c
+  ) {
+    if (a == 0)
+      return {};
+
+    std::vector<std::string> r;
+
+    r.push_back(
+      exactQuadraticRootString(
+        a,
+        b,
+        c,
+        true
+      )
+    );
+
+    r.push_back(
+      exactQuadraticRootString(
+        a,
+        b,
+        c,
+        false
+      )
+    );
+
+    return r;
+  }
+
+  inline std::vector<std::string> exactCubicRoots(
+    long long a,
+    long long b,
+    long long c,
+    long long d
+  ) {
+    if (a == 0)
+      return {};
+
+    auto numerators =
+    integerDivisors(d);
+
+    auto denominators =
+    integerDivisors(a);
+
+    for (long long pn : numerators) {
+      for (long long qn : denominators) {
+        if (qn == 0)
+          continue;
+
+        for (int sign : {1, -1}) {
+          long long p = pn * sign;
+          long long q = qn;
+
+          __int128 x = p;
+
+          __int128 value =
+          static_cast<__int128>(a) *
+          x *
+          x *
+          x +
+          static_cast<__int128>(b) *
+          q *
+          x *
+          x +
+          static_cast<__int128>(c) *
+          q *
+          q *
+          x +
+          static_cast<__int128>(d) *
+          q *
+          q *
+          q;
+
+          if (value != 0)
+            continue;
+
+          long long bq =
+          b * q +
+          a * p;
+
+          if (bq % q != 0)
+            continue;
+
+          long long qb =
+          bq / q;
+
+          long long cq =
+          c * q +
+          qb * p;
+
+          if (cq % q != 0)
+            continue;
+
+          long long qc =
+          cq / q;
+
+          std::vector<std::string> result;
+
+          result.push_back(
+            exactString(
+              makeExact(
+                p,
+                q
+              )
+            )
+          );
+
+          auto qr =
+          exactQuadraticRoots(
+            a,
+            qb,
+            qc
+          );
+
+          result.insert(
+            result.end(),
+                        qr.begin(),
+                        qr.end()
+          );
+
+          return result;
+        }
+      }
+    }
+
+    double A =
+    static_cast<double>(b) / a;
+
+    double B =
+    static_cast<double>(c) / a;
+
+    double C =
+    static_cast<double>(d) / a;
+
+    double pv =
+    B -
+    A * A / 3.0;
+
+    double qv =
+    2.0 * A * A * A / 27.0 -
+    A * B / 3.0 +
+    C;
+
+    double delta =
+    qv * qv / 4.0 +
+    pv * pv * pv / 27.0;
+
+    std::vector<std::string> result;
+
+    if (delta > 1e-14) {
+      std::string u =
+      "cbrt(" +
+      formatNumber(
+        -qv / 2.0 +
+        std::sqrt(delta)
+      ) +
+      ")";
+
+    std::string v =
+    "cbrt(" +
+    formatNumber(
+      -qv / 2.0 -
+      std::sqrt(delta)
+    ) +
+    ")";
+
+    std::string shift =
+    formatNumber(
+      -A / 3.0
+    );
+
+    result.push_back(
+      u +
+      "+" +
+      v +
+      (
+        shift == "0"
+        ? ""
+        : "+(" + shift + ")"
+      )
+    );
+
+    std::string real =
+    "(-(" +
+    u +
+    "+" +
+    v +
+    ")/2)";
+
+    std::string imag =
+    "sqrt(3)*((" +
+    u +
+    ")-(" +
+    v +
+    "))/2";
+
+    std::string shifted =
+    shift == "0"
+    ? real
+    : "(" + real + ")+" + shift;
+
+    result.push_back(
+      shifted +
+      "+(" +
+      imag +
+      ")*i"
+    );
+
+    result.push_back(
+      shifted +
+      "-(" +
+      imag +
+      ")*i"
+    );
+
+    return result;
+    }
+
+    if (std::abs(delta) <= 1e-14) {
+      double u =
+      std::cbrt(
+        -qv / 2.0
+      );
+
+      double x1 =
+      2.0 * u -
+      A / 3.0;
+
+      double x2 =
+      -u -
+      A / 3.0;
+
+      result.push_back(
+        formatNumber(x1)
+      );
+
+      result.push_back(
+        formatNumber(x2)
+      );
+
+      result.push_back(
+        formatNumber(x2)
+      );
+
+      return result;
+    }
+
+    double rr =
+    2.0 *
+    std::sqrt(
+      -pv / 3.0
+    );
+
+    double theta =
+    std::acos(
+      (3.0 * qv /
+      (2.0 * pv)) *
+      std::sqrt(
+        -3.0 / pv
+      )
+    );
+
+    for (int k = 0; k < 3; ++k) {
+      double x =
+      rr *
+      std::cos(
+        (theta +
+        2.0 * pi * k) /
+        3.0
+      ) -
+      A / 3.0;
+
+      result.push_back(
+        formatNumber(x)
       );
     }
 
+    return result;
+  }
+
+  inline std::vector<std::string> roots(
+    const std::string& expression,
+    bool closedForm = false
+  ) {
+    Polynomial p;
+
+    if (!parsePolynomial(expression, p))
+      throw std::runtime_error(
+        "bad input"
+      );
+
     p.trim();
 
-    int n = p.degree();
+    if (p.degree() <= 0)
+      return {};
 
-    if (n == 1) {
-      return {
-        exactNormalize(
-          exactDiv(
-            makeExact(
-              -(long long)std::llround(
-                p.coefficients[0].real()
-              )
-            ),
-            makeExact(
-              (long long)std::llround(
-                p.coefficients[1].real()
-              )
-            )
-          )
-        )
-      };
+    if (!closedForm) {
+      Roots r =
+      polynomialRoots(p);
+
+      std::vector<std::string> result;
+
+      for (const auto& z : r)
+        result.push_back(
+          formatComplexClosed(z)
+        );
+
+      return result;
     }
 
-    if (n == 2) {
-      double a =
-      p.coefficients[2].real();
+    int degree =
+    p.degree();
 
-      double b =
-      p.coefficients[1].real();
-
-      double c =
-      p.coefficients[0].real();
-
-      long long an;
-      long long ad;
-      long long bn;
-      long long bd;
-      long long cn;
-      long long cd;
+    if (
+      degree == 1 ||
+      degree == 2 ||
+      degree == 3
+    ) {
+      long long a;
+      long long b;
+      long long c;
+      long long d;
 
       if (
-        rationalValue(a, an, ad) &&
-        rationalValue(b, bn, bd) &&
-        rationalValue(c, cn, cd)
+        degree == 1 &&
+        exactInteger(
+          p.coefficients[1].real(),
+                     a
+        ) &&
+        exactInteger(
+          p.coefficients[0].real(),
+                     b
+        )
       ) {
-        Exact A =
-        makeExact(an, ad);
-
-        Exact B =
-        makeExact(bn, bd);
-
-        Exact C =
-        makeExact(cn, cd);
-
-        Exact fourAC =
-        exactMul(
-          makeExact(4),
-                 exactMul(A, C)
-        );
-
-        Exact disc =
-        exactSub(
-          exactMul(B, B),
-                 fourAC
-        );
-
-        Exact sd =
-        exactSqrt(disc);
-
-        if (
-          B.n == 0 &&
-          B.d == 1 &&
-          A.n == 1 &&
-          A.d == 1 &&
-          !sd.symbolic.empty()
-        ) {
-          std::string root =
-          sd.symbolic;
-
-          if (
-            root.rfind(
-              "2*sqrt(",
-                       0
-            ) == 0 &&
-            root.back() == ')'
-          ) {
-            root =
-            "sqrt(" +
-            root.substr(
-              7,
-              root.size() - 8
-            ) +
-            ")";
-          }
-
-          return {
-            root,
-            "-(" + root + ")"
-          };
-        }
-
-        Exact negB =
-        makeExact(
-          -B.n,
-          B.d
-        );
-
-        Exact den =
-        exactMul(
-          makeExact(2),
-                 A
-        );
-
-        Exact x1 =
-        exactDiv(
-          exactAdd(
-            negB,
-            sd
-          ),
-          den
-        );
-
-        Exact x2 =
-        exactDiv(
-          exactSub(
-            negB,
-            sd
-          ),
-          den
-        );
-
         return {
-          exactNormalize(x1),
-          exactNormalize(x2)
+          exactString(
+            makeExact(
+              -b,
+              a
+            )
+          )
         };
+      }
+
+      if (
+        degree == 2 &&
+        exactInteger(
+          p.coefficients[2].real(),
+                     a
+        ) &&
+        exactInteger(
+          p.coefficients[1].real(),
+                     b
+        ) &&
+        exactInteger(
+          p.coefficients[0].real(),
+                     c
+        )
+      ) {
+        return exactQuadraticRoots(
+          a,
+          b,
+          c
+        );
+      }
+
+      if (
+        degree == 3 &&
+        exactInteger(
+          p.coefficients[3].real(),
+                     a
+        ) &&
+        exactInteger(
+          p.coefficients[2].real(),
+                     b
+        ) &&
+        exactInteger(
+          p.coefficients[1].real(),
+                     c
+        ) &&
+        exactInteger(
+          p.coefficients[0].real(),
+                     d
+        )
+      ) {
+        return exactCubicRoots(
+          a,
+          b,
+          c,
+          d
+        );
       }
     }
 
     Roots r =
     polynomialRoots(p);
 
-    std::vector<std::string> o;
+    std::vector<std::string> result;
 
-    for (auto& z : r) {
-      o.push_back(
+    for (const auto& z : r)
+      result.push_back(
         formatComplexClosed(z)
       );
-    }
 
-    return o;
+    return result;
   }
 
 }
