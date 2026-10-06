@@ -1,7 +1,11 @@
 #include <iostream>
 #include "CymboliC.h"
-//differentiate, integrate.
+
 int main() {
-  std::cout << differentiate("ln(x)");
+  auto r = cymbolic::roots("3*x^3+2*x^2-3*x");
+
+  for (const auto& root : r)
+    std::cout << root << '\n';
+
   return 0;
 }

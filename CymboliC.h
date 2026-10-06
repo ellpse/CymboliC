@@ -1,6 +1,138 @@
+/*
+ syntax!!
+ CONSTANTS
+ pi
+ e
+
+ VARIABLE
+ x
+
+ ARITHMETIC
+ x+y
+ x-y
+ x*y
+ x/y
+ x^y
+ (x+y)
+ -(x)
+ abs(x)
+
+ FUNCTIONS
+ sin(x)
+ cos(x)
+ tan(x)
+ cot(x)
+ sec(x)
+ csc(x)
+
+ INVERSE TRIG FUNCTIONS
+ asin(x)
+ acos(x)
+ atan(x)
+ acot(x)
+ asec(x)
+ acsc(x)
+
+ HYPERBOLIC FUNCTIONS
+ sinh(x)
+ cosh(x)
+ tanh(x)
+ coth(x)
+ sech(x)
+ csch(x)
+
+ OTHER FUNCTIONS
+ exp(x)
+ ln(x)
+ log(x)
+ sqrt(x)
+ abs(x)
+
+ DIFFERENTIATION
+ differentiate("x")
+ differentiate("x^2")
+ differentiate("2*x^3")
+ differentiate("sin(x)")
+ differentiate("cos(x)")
+ differentiate("tan(x)")
+ differentiate("exp(x)")
+ differentiate("ln(x)")
+ differentiate("sqrt(x)")
+ differentiate("sin(2*x)")
+ differentiate("x*sin(x)")
+ differentiate("x^2+sin(x)")
+
+ INTEGRATION
+ integrate("x")
+ integrate("x^2")
+ integrate("2*x^3")
+ integrate("sin(x)")
+ integrate("cos(x)")
+ integrate("tan(x)")
+ integrate("sec(x)")
+ integrate("csc(x)")
+ integrate("sinh(x)")
+ integrate("cosh(x)")
+ integrate("tanh(x)")
+ integrate("coth(x)")
+ integrate("sech(x)")
+ integrate("csch(x)")
+ integrate("exp(x)")
+ integrate("ln(x)")
+ integrate("log(x)")
+ integrate("sqrt(x)")
+ integrate("sin(2*x)")
+ integrate("exp(3*x)")
+ integrate("sec^2(x)")
+ integrate("csc^2(x)")
+ integrate("sech^2(x)")
+ integrate("csch^2(x)")
+
+ EVALUATION
+ evaluate("x", 5)
+ evaluate("x^2", 5)
+ evaluate("2*x^2+3*x", 5)
+ evaluate("sin(x)", 5)
+ evaluate("sqrt(x)", 5)
+
+ DEFINITE INTEGRATION
+ defintegral("x", 0, 5)
+ defintegral("x^2", 0, 3)
+ defintegral("2*x^2", 4.5, 3.14)
+ defintegral("sin(x)", 0, pi)
+ defintegral("exp(x)", 0, 1)
+
+ INTEGRATION RETURNS AN ANTIDERIVATIVE
+ integrate("x^2")
+ x^3/3+C
+
+ DEFINITE INTEGRATION RETURNS A NUMBER
+ defintegral("x^2", 0, 3)
+ 9
+
+ FUNCTION NAMES
+ differentiate
+ integrate
+ evaluate
+ defintegral
+
+ ALL FUNCTION ARGUMENTS ARE STRINGS
+ ALL NUMERIC EVALUATION VALUES ARE FLOATS
+
+ IMPLICIT MULTIPLICATION IS NOT SUPPORTED
+ USE:
+ 2*x
+ x^2
+ 3*sin(x)
+
+ INSTEAD OF:
+ 2x
+ 3sin(x)
+ */
 #pragma once
 
 #include <cmath>
+#include <complex>
 #include <string>
 #include <vector>
 #include <unordered_map>
@@ -8,770 +140,1678 @@
 #include <sstream>
 #include <iomanip>
 #include <cctype>
+#include <functional>
+#include <algorithm>
 
-inline constexpr double pi = 3.141592653589793238462643383279502884;
-inline constexpr double e = 2.718281828459045235360287471352662498;
+namespace cymbolic {
 
-inline const std::unordered_map<std::string, std::string> derivativeRules = {
-  {"sin", "cos"},
-  {"cos", "-sin"},
-  {"tan", "sec^2"},
-  {"cot", "-csc^2"},
-  {"sec", "sec*tan"},
-  {"csc", "-csc*cot"},
-  {"asin", "1/sqrt(1-x^2)"},
-  {"acos", "-1/sqrt(1-x^2)"},
-  {"atan", "1/(1+x^2)"},
-  {"acot", "-1/(1+x^2)"},
-  {"asec", "1/(x^2*sqrt(1-1/x^2))"},
-  {"acsc", "-1/(x^2*sqrt(1-1/x^2))"},
-  {"exp", "exp"},
-  {"ln", "1/x"},
-  {"log", "1/(x*ln(10))"},
-  {"sqrt", "1/(2*sqrt(x))"},
-  {"sinh", "cosh"},
-  {"cosh", "sinh"},
-  {"tanh", "sech^2"},
-  {"coth", "-csch^2"},
-  {"sech", "-sech*tanh"},
-  {"csch", "-csch*coth"}
-};
+  constexpr double pi = 3.14159265358979323846;
+  constexpr double e = 2.71828182845904523536;
 
-inline const std::unordered_map<std::string, std::string> integralRules = {
-  {"sin", "-cos($)"},
-  {"cos", "sin($)"},
-  {"tan", "-ln(abs(cos($)))"},
-  {"cot", "ln(abs(sin($)))"},
-  {"sec", "ln(abs(sec($)+tan($)))"},
-  {"csc", "-ln(abs(csc($)+cot($)))"},
-  {"exp", "exp($)"},
-  {"sinh", "cosh($)"},
-  {"cosh", "sinh($)"},
-  {"tanh", "ln(cosh($))"},
-  {"coth", "ln(abs(sinh($)))"},
-  {"sech", "atan(sinh($))"},
-  {"csch", "ln(abs(tanh(x/2)))"},
-  {"ln", "$*ln($)-$"}
-};
+  using Complex = std::complex<double>;
+  using Roots = std::vector<Complex>;
 
-inline std::string formatNumber(double value) {
-  if (std::abs(value) < 1e-12) value = 0.0;
+  inline const std::unordered_map<std::string, std::string> derivativeRules = {
+    {"sin", "cos(x)"},
+    {"cos", "-sin(x)"},
+    {"tan", "sec(x)^2"},
+    {"cot", "-csc(x)^2"},
+    {"sec", "sec(x)*tan(x)"},
+    {"csc", "-csc(x)*cot(x)"},
+    {"asin", "1/sqrt(1-x^2)"},
+    {"acos", "-1/sqrt(1-x^2)"},
+    {"atan", "1/(1+x^2)"},
+    {"acot", "-1/(1+x^2)"},
+    {"asec", "1/(abs(x)*sqrt(x^2-1))"},
+    {"acsc", "-1/(abs(x)*sqrt(x^2-1))"},
+    {"sinh", "cosh(x)"},
+    {"cosh", "sinh(x)"},
+    {"tanh", "sech(x)^2"},
+    {"coth", "-csch(x)^2"},
+    {"sech", "-sech(x)*tanh(x)"},
+    {"csch", "-csch(x)*coth(x)"},
+    {"exp", "exp(x)"},
+    {"ln", "1/x"},
+    {"log", "1/(x*ln(10))"},
+    {"sqrt", "1/(2*sqrt(x))"}
+  };
 
-  std::ostringstream numberBuffer;
-  numberBuffer << std::setprecision(15) << value;
+  inline const std::unordered_map<std::string, std::string> integralRules = {
+    {"sin", "-cos($)"},
+    {"cos", "sin($)"},
+    {"tan", "-ln(abs(cos($)))"},
+    {"cot", "ln(abs(sin($)))"},
+    {"sec", "ln(abs(sec($)+tan($)))"},
+    {"csc", "-ln(abs(csc($)+cot($)))"},
+    {"sinh", "cosh($)"},
+    {"cosh", "sinh($)"},
+    {"tanh", "ln(cosh($))"},
+    {"coth", "ln(abs(sinh($)))"},
+    {"sech", "atan(sinh($))"},
+    {"csch", "ln(abs(tanh($/2)))"},
+    {"exp", "exp($)"},
+    {"sqrt", "(2/3)*($)^(3/2)"}
+  };
 
-  std::string resultText = numberBuffer.str();
+  inline std::string formatNumber(double value) {
+    if (std::abs(value) < 1e-12)
+      value = 0.0;
 
-  if (resultText.find('.') != std::string::npos) {
-    while (!resultText.empty() && resultText.back() == '0')
-      resultText.pop_back();
+    std::ostringstream output;
+    output << std::fixed << std::setprecision(10) << value;
 
-    if (!resultText.empty() && resultText.back() == '.')
-      resultText.pop_back();
+    std::string result = output.str();
+
+    while (!result.empty() && result.back() == '0')
+      result.pop_back();
+
+    if (!result.empty() && result.back() == '.')
+      result.pop_back();
+
+    if (result == "-0")
+      result = "0";
+
+    return result;
   }
 
-  return resultText.empty() || resultText == "-0" ? "0" : resultText;
-}
+  inline std::string removeSpaces(const std::string& expression) {
+    std::string result;
 
-inline std::string removeSpaces(const std::string& expression) {
-  std::string resultText;
+    for (char c : expression) {
+      if (!std::isspace(static_cast<unsigned char>(c)))
+        result += c;
+    }
 
-  for (char character : expression) {
-    if (!std::isspace(static_cast<unsigned char>(character)))
-      resultText += character;
+    return result;
   }
 
-  return resultText;
-}
+  inline bool isNumber(const std::string& value) {
+    if (value.empty())
+      return false;
 
-inline bool isNumber(const std::string& value) {
-  if (value.empty()) return false;
-
-  size_t index = 0;
-
-  if (value[index] == '+' || value[index] == '-')
-    ++index;
-
-  bool hasDigit = false;
-  bool hasDecimal = false;
-
-  while (index < value.size()) {
-    char character = value[index];
-
-    if (std::isdigit(static_cast<unsigned char>(character))) {
-      hasDigit = true;
-    } else if (character == '.' && !hasDecimal) {
-      hasDecimal = true;
-    } else {
+    try {
+      size_t position = 0;
+      std::stod(value, &position);
+      return position == value.size();
+    }
+    catch (...) {
       return false;
     }
-
-    ++index;
   }
 
-  return hasDigit;
-}
+  inline bool isConstant(const std::string& expression) {
+    if (isNumber(expression))
+      return true;
 
-inline bool isConstant(const std::string& expression) {
-  return isNumber(expression) ||
-  expression == "pi" ||
-  expression == "e";
-}
-
-inline std::string replaceArgument(
-  const std::string& expression,
-  const std::string& functionArgument) {
-
-  std::string resultText;
-
-  for (char character : expression) {
-    if (character == '$')
-      resultText += "(" + functionArgument + ")";
-    else
-      resultText += character;
+    return expression == "pi" || expression == "e";
   }
 
-  return resultText;
-  }
-
-  inline int findOperator(
+  inline std::string replaceArgument(
     const std::string& expression,
-    char operatorSymbol) {
+    const std::string& argument
+  ) {
+    std::string result = expression;
+    size_t position = 0;
 
-    int parenthesisLevel = 0;
-
-    for (int index = static_cast<int>(expression.size()) - 1;
-         index >= 0;
-    --index) {
-
-      char character = expression[index];
-
-      if (character == ')')
-        ++parenthesisLevel;
-      else if (character == '(')
-        --parenthesisLevel;
-      else if (parenthesisLevel == 0 && character == operatorSymbol)
-        return index;
+    while ((position = result.find("$", position)) != std::string::npos) {
+      result.replace(position, 1, argument);
+      position += argument.size();
     }
 
-    return -1;
+    return result;
+  }
+
+  inline size_t findOperator(
+    const std::string& expression,
+    char target
+  ) {
+    int depth = 0;
+
+    for (size_t i = 0; i < expression.size(); ++i) {
+      char c = expression[i];
+
+      if (c == '(')
+        ++depth;
+      else if (c == ')')
+        --depth;
+      else if (c == target && depth == 0)
+        return i;
     }
 
-    inline std::vector<std::string> splitTerms(
-      const std::string& expression) {
+    return std::string::npos;
+  }
 
-      std::vector<std::string> terms;
-      std::string currentTerm;
-      int parenthesisLevel = 0;
+  inline std::vector<std::string> splitTerms(
+    const std::string& expression
+  ) {
+    std::vector<std::string> terms;
 
-      for (size_t index = 0; index < expression.size(); ++index) {
-        char character = expression[index];
-
-        if (character == '(')
-          ++parenthesisLevel;
-        else if (character == ')')
-          --parenthesisLevel;
-
-        bool isSeparator =
-        (character == '+' || character == '-') &&
-        parenthesisLevel == 0 &&
-        index > 0 &&
-        expression[index - 1] != '^';
-
-        if (isSeparator) {
-          if (!currentTerm.empty())
-            terms.push_back(currentTerm);
-
-          currentTerm.clear();
-        }
-
-        currentTerm += character;
-      }
-
-      if (!currentTerm.empty())
-        terms.push_back(currentTerm);
-
+    if (expression.empty())
       return terms;
+
+    size_t start = 0;
+    int depth = 0;
+
+    for (size_t i = 0; i < expression.size(); ++i) {
+      char c = expression[i];
+
+      if (c == '(') {
+        ++depth;
       }
+      else if (c == ')') {
+        --depth;
+      }
+      else if (
+        depth == 0 &&
+        (c == '+' || c == '-') &&
+        i != 0 &&
+        expression[i - 1] != '^'
+      ) {
+        terms.push_back(expression.substr(start, i - start));
+        start = i;
+      }
+    }
 
-      inline std::string differentiate(const std::string& expression);
-      inline std::string integrate(const std::string& expression);
+    terms.push_back(expression.substr(start));
 
-      inline std::string differentiateFunction(
-        const std::string& expression) {
+    return terms;
+  }
 
-        std::string expressionText = removeSpaces(expression);
+  inline std::string differentiate(const std::string& expression);
+  inline std::string integrate(const std::string& expression);
 
-        if (expressionText.empty() || isConstant(expressionText))
+  inline std::string differentiateFunction(
+    const std::string& functionName,
+    const std::string& argument
+  ) {
+    auto rule = derivativeRules.find(functionName);
+
+    if (rule == derivativeRules.end())
+      return "r not found";
+
+    std::string inside = argument;
+    std::string derivative;
+
+    if (functionName == "sqrt") {
+      derivative = "1/(2*sqrt(" + inside + "))";
+    }
+    else {
+      derivative = rule->second;
+
+      size_t position = 0;
+
+      while ((position = derivative.find("x", position)) != std::string::npos) {
+        derivative.replace(position, 1, inside);
+        position += inside.size();
+      }
+    }
+
+    std::string insideDerivative = differentiate(inside);
+
+    if (insideDerivative == "1")
+      return derivative;
+
+    if (isNumber(insideDerivative)) {
+      double value = std::stod(insideDerivative);
+
+      if (std::abs(value - 1.0) < 1e-12)
+        return derivative;
+
+      return "(" + formatNumber(value) + ")*(" + derivative + ")";
+    }
+
+    return "(" + derivative + ")*(" + insideDerivative + ")";
+  }
+
+  inline std::string differentiateTerm(const std::string& term) {
+    std::string expression = removeSpaces(term);
+
+    if (expression.empty())
+      return "0";
+
+    if (expression == "x")
+      return "1";
+
+    if (isConstant(expression))
+      return "0";
+
+    if (expression.front() == '+')
+      return differentiateTerm(expression.substr(1));
+
+    if (expression.front() == '-') {
+      return "-(" + differentiateTerm(expression.substr(1)) + ")";
+    }
+
+    size_t plusPosition = findOperator(expression, '+');
+
+    if (plusPosition != std::string::npos)
+      return differentiate(expression);
+
+    for (size_t i = 1; i < expression.size(); ++i) {
+      if (
+        expression[i] == '-' &&
+        expression[i - 1] != '^' &&
+        expression[i - 1] != '('
+      ) {
+        return differentiate(expression);
+      }
+    }
+
+    size_t divisionPosition = findOperator(expression, '/');
+
+    if (divisionPosition != std::string::npos) {
+      std::string top = expression.substr(0, divisionPosition);
+      std::string bottom = expression.substr(divisionPosition + 1);
+
+      std::string topDerivative = differentiate(top);
+      std::string bottomDerivative = differentiate(bottom);
+
+      return "((" + topDerivative + ")*(" + bottom + ")-(" +
+      top + ")*(" + bottomDerivative + "))/(" +
+      bottom + ")^2";
+    }
+
+    size_t multiplicationPosition = findOperator(expression, '*');
+
+    if (multiplicationPosition != std::string::npos) {
+      std::string left = expression.substr(0, multiplicationPosition);
+      std::string right = expression.substr(multiplicationPosition + 1);
+
+      std::string leftDerivative = differentiate(left);
+      std::string rightDerivative = differentiate(right);
+
+      if (leftDerivative == "0")
+        return "(" + left + ")*(" + rightDerivative + ")";
+
+      if (rightDerivative == "0")
+        return "(" + leftDerivative + ")*(" + right + ")";
+
+      return "(" + leftDerivative + ")*(" + right + ")+(" +
+      left + ")*(" + rightDerivative + ")";
+    }
+
+    size_t powerPosition = findOperator(expression, '^');
+
+    if (powerPosition != std::string::npos) {
+      std::string base = expression.substr(0, powerPosition);
+      std::string exponent = expression.substr(powerPosition + 1);
+
+      if (isNumber(exponent)) {
+        double power = std::stod(exponent);
+
+        if (std::abs(power) < 1e-12)
           return "0";
 
-        if (expressionText == "x")
-          return "1";
+        std::string baseDerivative = differentiate(base);
 
-        if (expressionText.front() == '(' &&
-          expressionText.back() == ')') {
+        if (baseDerivative == "0")
+          return "0";
 
-          return differentiate(
-            expressionText.substr(
-              1,
-              expressionText.size() - 2
+        return "(" + formatNumber(power) + ")*(" +
+        base + ")^(" + formatNumber(power - 1.0) +
+        ")*(" + baseDerivative + ")";
+      }
+    }
+
+    if (
+      expression.size() >= 3 &&
+      expression.back() == ')'
+    ) {
+      size_t openPosition = expression.find('(');
+
+      if (openPosition != std::string::npos) {
+        std::string functionName =
+        expression.substr(0, openPosition);
+
+        if (derivativeRules.find(functionName) != derivativeRules.end()) {
+          std::string argument =
+          expression.substr(
+            openPosition + 1,
+            expression.size() - openPosition - 2
+          );
+
+          return differentiateFunction(functionName, argument);
+        }
+      }
+    }
+
+    size_t xPosition = expression.find('x');
+
+    if (xPosition != std::string::npos) {
+      std::string coefficient = expression.substr(0, xPosition);
+      std::string exponent = "1";
+
+      if (
+        xPosition + 1 < expression.size() &&
+        expression[xPosition + 1] == '^'
+      ) {
+        exponent = expression.substr(xPosition + 2);
+      }
+
+      if (coefficient.empty())
+        coefficient = "1";
+
+      if (coefficient == "-")
+        coefficient = "-1";
+
+      if (isNumber(coefficient) && isNumber(exponent)) {
+        double coefficientValue = std::stod(coefficient);
+        double exponentValue = std::stod(exponent);
+
+        if (std::abs(exponentValue) < 1e-12)
+          return "0";
+
+        return formatNumber(
+          coefficientValue * exponentValue
+        ) + "*x^" +
+        formatNumber(exponentValue - 1.0);
+      }
+    }
+
+    return "r not found";
+  }
+
+  inline std::string differentiate(const std::string& expression) {
+    std::string expressionText = removeSpaces(expression);
+
+    if (expressionText.empty())
+      return "0";
+
+    std::vector<std::string> terms =
+    splitTerms(expressionText);
+
+    if (terms.size() > 1) {
+      std::string result;
+
+      for (const std::string& term : terms) {
+        std::string value = differentiateTerm(term);
+
+        if (value == "r not found")
+          return value;
+
+        if (value == "0")
+          continue;
+
+        if (!value.empty() && value.front() == '-') {
+          result += value;
+        }
+        else if (result.empty()) {
+          result = value;
+        }
+        else {
+          result += "+" + value;
+        }
+      }
+
+      return result.empty() ? "0" : result;
+    }
+
+    return differentiateTerm(expressionText);
+  }
+
+  inline std::string integrateTerm(const std::string& term) {
+    std::string expressionText = removeSpaces(term);
+
+    if (expressionText.empty())
+      return "0";
+
+    if (expressionText.front() == '+')
+      return integrateTerm(expressionText.substr(1));
+
+    if (expressionText.front() == '-') {
+      std::string result =
+      integrateTerm(expressionText.substr(1));
+
+      if (result == "r not found")
+        return result;
+
+      if (result == "0")
+        return "0";
+
+      return "-(" + result + ")";
+    }
+
+    if (isConstant(expressionText))
+      return expressionText == "0" ? "0" : expressionText + "*x";
+
+    size_t multiplicationPosition =
+    findOperator(expressionText, '*');
+
+    if (multiplicationPosition != std::string::npos) {
+      std::string left =
+      expressionText.substr(0, multiplicationPosition);
+
+      std::string right =
+      expressionText.substr(multiplicationPosition + 1);
+
+      if (isNumber(left)) {
+        std::string result = integrateTerm(right);
+
+        if (result == "r not found")
+          return result;
+
+        return "(" + left + ")*(" + result + ")";
+      }
+
+      if (isNumber(right)) {
+        std::string result = integrateTerm(left);
+
+        if (result == "r not found")
+          return result;
+
+        return "(" + right + ")*(" + result + ")";
+      }
+    }
+
+    if (
+      expressionText.size() > 4 &&
+      expressionText.back() == ')' &&
+      expressionText.find("^2(") != std::string::npos
+    ) {
+      size_t squarePosition =
+      expressionText.find("^2(");
+
+      if (squarePosition != std::string::npos) {
+        std::string functionName =
+        expressionText.substr(0, squarePosition);
+
+        std::string functionArgument =
+        expressionText.substr(
+          squarePosition + 3,
+          expressionText.size() - squarePosition - 4
+        );
+
+        std::string innerDerivative =
+        differentiate(functionArgument);
+
+        if (innerDerivative == "1") {
+          if (functionName == "sec")
+            return "tan(" + functionArgument + ")";
+
+          if (functionName == "csc")
+            return "-cot(" + functionArgument + ")";
+
+          if (functionName == "sech")
+            return "tanh(" + functionArgument + ")";
+
+          if (functionName == "csch")
+            return "-coth(" + functionArgument + ")";
+
+          if (functionName == "tan")
+            return "tan(" + functionArgument + ")-" +
+            functionArgument;
+        }
+
+        if (isNumber(innerDerivative)) {
+          double value =
+          std::stod(innerDerivative);
+
+          if (std::abs(value) > 1e-12) {
+            if (functionName == "sec")
+              return "(" +
+              formatNumber(1.0 / value) +
+                ")*tan(" + functionArgument + ")";
+
+              if (functionName == "csc")
+                return "-" +
+                formatNumber(1.0 / value) +
+                  "*cot(" + functionArgument + ")";
+
+                if (functionName == "sech")
+                  return formatNumber(1.0 / value) +
+                  "*tanh(" + functionArgument + ")";
+
+                if (functionName == "csch")
+                  return "-" +
+                  formatNumber(1.0 / value) +
+                    "*coth(" + functionArgument + ")";
+
+                  if (functionName == "tan")
+                    return "(" +
+                    formatNumber(1.0 / value) +
+                      ")*(tan(" + functionArgument + ")-" +
+                      functionArgument + ")";
+          }
+        }
+      }
+    }
+
+    size_t powerPosition =
+    findOperator(expressionText, '^');
+
+    if (powerPosition != std::string::npos) {
+      std::string base =
+      expressionText.substr(0, powerPosition);
+
+      std::string exponent =
+      expressionText.substr(powerPosition + 1);
+
+      if (base == "x" && isNumber(exponent)) {
+        double power = std::stod(exponent);
+
+        if (std::abs(power + 1.0) < 1e-12)
+          return "ln(abs(x))";
+
+        return "x^" +
+        formatNumber(power + 1.0) +
+          "/" +
+          formatNumber(power + 1.0);
+      }
+
+      if (isNumber(base) && isNumber(exponent)) {
+        double value =
+        std::pow(std::stod(base), std::stod(exponent));
+
+        return formatNumber(value) + "*x";
+      }
+    }
+
+    if (
+      expressionText.size() >= 3 &&
+      expressionText.back() == ')'
+    ) {
+      size_t openPosition =
+      expressionText.find('(');
+
+      if (openPosition != std::string::npos) {
+        std::string functionName =
+        expressionText.substr(0, openPosition);
+
+        std::string argument =
+        expressionText.substr(
+          openPosition + 1,
+          expressionText.size() - openPosition - 2
+        );
+
+        if (functionName == "ln") {
+          std::string derivative =
+          differentiate(argument);
+
+          if (derivative == "1")
+            return "x*ln(x)-x";
+
+          if (isNumber(derivative)) {
+            double value =
+            std::stod(derivative);
+
+            return "(" +
+            formatNumber(1.0 / value) +
+              ")*(" +
+              argument +
+              "*ln(" +
+              argument +
+              ")-(" +
+              argument +
+              "))";
+          }
+        }
+
+        if (functionName == "log") {
+          std::string derivative =
+          differentiate(argument);
+
+          if (derivative == "1")
+            return "x*log(x)-x/ln(10)";
+
+          if (isNumber(derivative)) {
+            double value =
+            std::stod(derivative);
+
+            return "(" +
+            formatNumber(1.0 / value) +
+              ")*(" +
+              argument +
+              "*log(" +
+              argument +
+              ")-(" +
+              argument +
+              ")/ln(10))";
+          }
+        }
+
+        if (functionName == "asin") {
+          std::string derivative =
+          differentiate(argument);
+
+          if (derivative == "1")
+            return argument +
+            "*asin(" + argument +
+            ")+sqrt(1-(" +
+            argument + ")^2)";
+        }
+
+        if (functionName == "acos") {
+          std::string derivative =
+          differentiate(argument);
+
+          if (derivative == "1")
+            return argument +
+            "*acos(" + argument +
+            ")-sqrt(1-(" +
+            argument + ")^2)";
+        }
+
+        if (functionName == "atan") {
+          std::string derivative =
+          differentiate(argument);
+
+          if (derivative == "1")
+            return argument +
+            "*atan(" + argument +
+            ")-0.5*ln(1+(" +
+            argument + ")^2)";
+        }
+
+        if (functionName == "acot") {
+          std::string derivative =
+          differentiate(argument);
+
+          if (derivative == "1")
+            return argument +
+            "*acot(" + argument +
+            ")+0.5*ln(1+(" +
+            argument + ")^2)";
+        }
+
+        if (functionName == "asec") {
+          std::string derivative =
+          differentiate(argument);
+
+          if (derivative == "1")
+            return argument +
+            "*asec(" + argument +
+            ")-ln(abs(" +
+            argument +
+            "+sqrt((" +
+            argument +
+            ")^2-1)))";
+        }
+
+        if (functionName == "acsc") {
+          std::string derivative =
+          differentiate(argument);
+
+          if (derivative == "1")
+            return argument +
+            "*acsc(" + argument +
+            ")+ln(abs(" +
+            argument +
+            "+sqrt((" +
+            argument +
+            ")^2-1)))";
+        }
+
+        auto rule =
+        integralRules.find(functionName);
+
+        if (rule != integralRules.end()) {
+          std::string derivative =
+          differentiate(argument);
+
+          std::string result =
+          replaceArgument(
+            rule->second,
+            argument
+          );
+
+          if (derivative == "1")
+            return result;
+
+          if (isNumber(derivative)) {
+            double value =
+            std::stod(derivative);
+
+            if (std::abs(value) > 1e-12) {
+              return "(" +
+              formatNumber(1.0 / value) +
+                ")*(" +
+                result +
+                ")";
+            }
+          }
+        }
+      }
+    }
+
+    size_t xPosition =
+    expressionText.find('x');
+
+    if (
+      xPosition != std::string::npos &&
+      xPosition == 0
+    ) {
+      if (expressionText == "x")
+        return "x^2/2";
+
+      if (
+        xPosition + 1 < expressionText.size() &&
+        expressionText[xPosition + 1] == '^'
+      ) {
+        std::string exponent =
+        expressionText.substr(xPosition + 2);
+
+        if (isNumber(exponent)) {
+          double power =
+          std::stod(exponent);
+
+          if (std::abs(power + 1.0) < 1e-12)
+            return "ln(abs(x))";
+
+          return "x^" +
+          formatNumber(power + 1.0) +
+            "/" +
+            formatNumber(power + 1.0);
+        }
+      }
+    }
+
+    if (isNumber(expressionText))
+      return expressionText + "*x";
+
+    return "r not found";
+  }
+
+  inline std::string integrate(const std::string& expression) {
+    std::string expressionText =
+    removeSpaces(expression);
+
+    if (expressionText.empty())
+      return "C";
+
+    std::vector<std::string> terms =
+    splitTerms(expressionText);
+
+    std::string result;
+
+    for (const std::string& term : terms) {
+      std::string integrated =
+      integrateTerm(term);
+
+      if (integrated == "r not found")
+        return integrated;
+
+      if (integrated == "0")
+        continue;
+
+      if (result.empty()) {
+        result = integrated;
+      }
+      else if (
+        !integrated.empty() &&
+        integrated.front() == '-'
+      ) {
+        result += integrated;
+      }
+      else {
+        result += "+" + integrated;
+      }
+    }
+
+    if (result.empty())
+      return "C";
+
+    return result + "+C";
+  }
+
+  inline float evaluate(
+    const std::string& input,
+    float xvalue
+  ) {
+    std::string expression =
+    removeSpaces(input);
+
+    size_t position = 0;
+
+    std::function<double()> parseExpression;
+    std::function<double()> parseTerm;
+    std::function<double()> parsePower;
+    std::function<double()> parseUnary;
+    std::function<double()> parsePrimary;
+
+    parseExpression = [&]() -> double {
+      double value = parseTerm();
+
+      while (position < expression.size()) {
+        if (expression[position] == '+') {
+          ++position;
+          value += parseTerm();
+        }
+        else if (expression[position] == '-') {
+          ++position;
+          value -= parseTerm();
+        }
+        else {
+          break;
+        }
+      }
+
+      return value;
+    };
+
+    parseTerm = [&]() -> double {
+      double value = parsePower();
+
+      while (position < expression.size()) {
+        if (expression[position] == '*') {
+          ++position;
+          value *= parsePower();
+        }
+        else if (expression[position] == '/') {
+          ++position;
+          value /= parsePower();
+        }
+        else {
+          break;
+        }
+      }
+
+      return value;
+    };
+
+    parsePower = [&]() -> double {
+      double value = parseUnary();
+
+      if (
+        position < expression.size() &&
+        expression[position] == '^'
+      ) {
+        ++position;
+        double exponent = parsePower();
+        value = std::pow(value, exponent);
+      }
+
+      return value;
+    };
+
+    parseUnary = [&]() -> double {
+      if (
+        position < expression.size() &&
+        expression[position] == '+'
+      ) {
+        ++position;
+        return parseUnary();
+      }
+
+      if (
+        position < expression.size() &&
+        expression[position] == '-'
+      ) {
+        ++position;
+        return -parseUnary();
+      }
+
+      return parsePrimary();
+    };
+
+    parsePrimary = [&]() -> double {
+      if (position >= expression.size())
+        throw std::runtime_error("invalid expression");
+
+      if (expression[position] == '(') {
+        ++position;
+
+        double value = parseExpression();
+
+        if (
+          position >= expression.size() ||
+          expression[position] != ')'
+        ) {
+          throw std::runtime_error("missing )");
+        }
+
+        ++position;
+        return value;
+      }
+
+      if (
+        std::isdigit(
+          static_cast<unsigned char>(expression[position])
+        ) ||
+        expression[position] == '.'
+      ) {
+        size_t start = position;
+
+        while (
+          position < expression.size() &&
+          (
+            std::isdigit(
+              static_cast<unsigned char>(
+                expression[position]
+              )
+            ) ||
+            expression[position] == '.'
+          )
+        ) {
+          ++position;
+        }
+
+        return std::stod(
+          expression.substr(
+            start,
+            position - start
+          )
+        );
+      }
+
+      if (
+        std::isalpha(
+          static_cast<unsigned char>(
+            expression[position]
+          )
+        )
+      ) {
+        size_t start = position;
+
+        while (
+          position < expression.size() &&
+          std::isalpha(
+            static_cast<unsigned char>(
+              expression[position]
+            )
+          )
+        ) {
+          ++position;
+        }
+
+        std::string name =
+        expression.substr(
+          start,
+          position - start
+        );
+
+        if (name == "x")
+          return xvalue;
+
+        if (name == "pi")
+          return pi;
+
+        if (name == "e")
+          return e;
+
+        if (
+          position >= expression.size() ||
+          expression[position] != '('
+        ) {
+          throw std::runtime_error(
+            "unknown identifier"
+          );
+        }
+
+        ++position;
+
+        double argument =
+        parseExpression();
+
+        if (
+          position >= expression.size() ||
+          expression[position] != ')'
+        ) {
+          throw std::runtime_error(
+            "missing )"
+          );
+        }
+
+        ++position;
+
+        if (name == "sin")
+          return std::sin(argument);
+
+        if (name == "cos")
+          return std::cos(argument);
+
+        if (name == "tan")
+          return std::tan(argument);
+
+        if (name == "cot")
+          return 1.0 / std::tan(argument);
+
+        if (name == "sec")
+          return 1.0 / std::cos(argument);
+
+        if (name == "csc")
+          return 1.0 / std::sin(argument);
+
+        if (name == "asin")
+          return std::asin(argument);
+
+        if (name == "acos")
+          return std::acos(argument);
+
+        if (name == "atan")
+          return std::atan(argument);
+
+        if (name == "acot")
+          return pi / 2.0 - std::atan(argument);
+
+        if (name == "asec")
+          return std::acos(1.0 / argument);
+
+        if (name == "acsc")
+          return std::asin(1.0 / argument);
+
+        if (name == "sinh")
+          return std::sinh(argument);
+
+        if (name == "cosh")
+          return std::cosh(argument);
+
+        if (name == "tanh")
+          return std::tanh(argument);
+
+        if (name == "coth")
+          return 1.0 / std::tanh(argument);
+
+        if (name == "sech")
+          return 1.0 / std::cosh(argument);
+
+        if (name == "csch")
+          return 1.0 / std::sinh(argument);
+
+        if (name == "exp")
+          return std::exp(argument);
+
+        if (name == "ln")
+          return std::log(argument);
+
+        if (name == "log")
+          return std::log10(argument);
+
+        if (name == "sqrt")
+          return std::sqrt(argument);
+
+        if (name == "abs")
+          return std::abs(argument);
+
+        throw std::runtime_error(
+          "unknown function"
+        );
+      }
+
+      throw std::runtime_error(
+        "invalid expression"
+      );
+    };
+
+    double result = parseExpression();
+
+    if (position != expression.size())
+      throw std::runtime_error(
+        "invalid expression"
+      );
+
+    return static_cast<float>(result);
+  }
+
+  inline float defintegral(
+    std::string input,
+    float lowbound,
+    float upbound
+  ) {
+    std::string expression =
+    integrate(input);
+
+    if (expression == "r not found")
+      return 0.0f;
+
+    size_t constantpos =
+    expression.find("+C");
+
+    if (constantpos != std::string::npos)
+      expression =
+      expression.substr(0, constantpos);
+
+    float upperresult =
+    evaluate(expression, upbound);
+
+    float lowerresult =
+    evaluate(expression, lowbound);
+
+    return upperresult - lowerresult;
+  }
+
+  struct Polynomial {
+    std::vector<Complex> coefficients;
+
+    Polynomial() : coefficients(1, Complex(0.0, 0.0)) {}
+
+    explicit Polynomial(Complex value)
+    : coefficients(1, value) {}
+
+    explicit Polynomial(std::vector<Complex> values)
+    : coefficients(std::move(values)) {
+      trim();
+    }
+
+    void trim() {
+      while (
+        coefficients.size() > 1 &&
+        std::abs(coefficients.back()) < 1e-14
+      ) {
+        coefficients.pop_back();
+      }
+    }
+
+    int degree() const {
+      return static_cast<int>(coefficients.size()) - 1;
+    }
+
+    bool isConstant() const {
+      return degree() == 0;
+    }
+
+    Complex evaluate(Complex x) const {
+      Complex result(0.0, 0.0);
+
+      for (auto it = coefficients.rbegin();
+           it != coefficients.rend();
+      ++it) {
+        result = result * x + *it;
+      }
+
+      return result;
+    }
+  };
+
+  inline Polynomial addPolynomial(
+    const Polynomial& a,
+    const Polynomial& b
+  ) {
+    size_t size =
+    std::max(a.coefficients.size(), b.coefficients.size());
+
+    std::vector<Complex> result(size, Complex(0.0, 0.0));
+
+    for (size_t i = 0; i < a.coefficients.size(); ++i)
+      result[i] += a.coefficients[i];
+
+    for (size_t i = 0; i < b.coefficients.size(); ++i)
+      result[i] += b.coefficients[i];
+
+    return Polynomial(result);
+  }
+
+  inline Polynomial subtractPolynomial(
+    const Polynomial& a,
+    const Polynomial& b
+  ) {
+    size_t size =
+    std::max(a.coefficients.size(), b.coefficients.size());
+
+    std::vector<Complex> result(size, Complex(0.0, 0.0));
+
+    for (size_t i = 0; i < a.coefficients.size(); ++i)
+      result[i] += a.coefficients[i];
+
+    for (size_t i = 0; i < b.coefficients.size(); ++i)
+      result[i] -= b.coefficients[i];
+
+    return Polynomial(result);
+  }
+
+  inline Polynomial multiplyPolynomial(
+    const Polynomial& a,
+    const Polynomial& b
+  ) {
+    std::vector<Complex> result(
+      a.degree() + b.degree() + 1,
+                                Complex(0.0, 0.0)
+    );
+
+    for (size_t i = 0; i < a.coefficients.size(); ++i) {
+      for (size_t j = 0; j < b.coefficients.size(); ++j) {
+        result[i + j] +=
+        a.coefficients[i] * b.coefficients[j];
+      }
+    }
+
+    return Polynomial(result);
+  }
+
+  inline Polynomial powerPolynomial(
+    Polynomial base,
+    int exponent
+  ) {
+    Polynomial result(Complex(1.0, 0.0));
+
+    while (exponent > 0) {
+      if (exponent & 1)
+        result = multiplyPolynomial(result, base);
+
+      base = multiplyPolynomial(base, base);
+      exponent >>= 1;
+    }
+
+    return result;
+  }
+
+  inline bool parsePolynomial(
+    const std::string& input,
+    Polynomial& result
+  ) {
+    std::string expression = removeSpaces(input);
+
+    if (expression.empty())
+      return false;
+
+    size_t position = 0;
+
+    std::function<bool(Polynomial&)> parseExpression;
+    std::function<bool(Polynomial&)> parseTerm;
+    std::function<bool(Polynomial&)> parsePower;
+    std::function<bool(Polynomial&)> parseUnary;
+    std::function<bool(Polynomial&)> parsePrimary;
+
+    parseExpression = [&](Polynomial& output) -> bool {
+      if (!parseTerm(output))
+        return false;
+
+      while (position < expression.size()) {
+        char op = expression[position];
+
+        if (op != '+' && op != '-')
+          break;
+
+        ++position;
+
+        Polynomial right;
+
+        if (!parseTerm(right))
+          return false;
+
+        if (op == '+')
+          output = addPolynomial(output, right);
+        else
+          output = subtractPolynomial(output, right);
+      }
+
+      return true;
+    };
+
+    parseTerm = [&](Polynomial& output) -> bool {
+      if (!parsePower(output))
+        return false;
+
+      while (position < expression.size()) {
+        char op = expression[position];
+
+        if (op != '*' && op != '/')
+          break;
+
+        ++position;
+
+        Polynomial right;
+
+        if (!parsePower(right))
+          return false;
+
+        if (op == '*') {
+          output = multiplyPolynomial(output, right);
+        }
+        else {
+          if (!right.isConstant())
+            return false;
+
+          Complex divisor =
+          right.coefficients[0];
+
+          if (std::abs(divisor) < 1e-14)
+            return false;
+
+          for (Complex& value : output.coefficients)
+            value /= divisor;
+        }
+      }
+
+      return true;
+    };
+
+    parsePower = [&](Polynomial& output) -> bool {
+      if (!parseUnary(output))
+        return false;
+
+      if (
+        position < expression.size() &&
+        expression[position] == '^'
+      ) {
+        ++position;
+
+        size_t start = position;
+
+        if (
+          position < expression.size() &&
+          (expression[position] == '+' ||
+          expression[position] == '-')
+        ) {
+          ++position;
+        }
+
+        while (
+          position < expression.size() &&
+          std::isdigit(
+            static_cast<unsigned char>(expression[position])
+          )
+        ) {
+          ++position;
+        }
+
+        if (start == position)
+          return false;
+
+        int exponent = 0;
+
+        try {
+          exponent =
+          std::stoi(
+            expression.substr(
+              start,
+              position - start
             )
           );
+        }
+        catch (...) {
+          return false;
+        }
+
+        if (exponent < 0)
+          return false;
+
+        output = powerPolynomial(output, exponent);
+      }
+
+      return true;
+    };
+
+    parseUnary = [&](Polynomial& output) -> bool {
+      if (position < expression.size()) {
+        if (expression[position] == '+') {
+          ++position;
+          return parseUnary(output);
+        }
+
+        if (expression[position] == '-') {
+          ++position;
+
+          if (!parseUnary(output))
+            return false;
+
+          for (Complex& value : output.coefficients)
+            value = -value;
+
+          return true;
+        }
+      }
+
+      return parsePrimary(output);
+    };
+
+    parsePrimary = [&](Polynomial& output) -> bool {
+      if (position >= expression.size())
+        return false;
+
+      if (expression[position] == '(') {
+        ++position;
+
+        if (!parseExpression(output))
+          return false;
+
+        if (
+          position >= expression.size() ||
+          expression[position] != ')'
+        ) {
+          return false;
+        }
+
+        ++position;
+        return true;
+      }
+
+      if (
+        expression[position] == 'x' &&
+        (
+          position + 1 >= expression.size() ||
+          !std::isalpha(
+            static_cast<unsigned char>(
+              expression[position + 1]
+            )
+          )
+        )
+      ) {
+        ++position;
+
+        output = Polynomial(
+          std::vector<Complex>{
+            Complex(0.0, 0.0),
+                            Complex(1.0, 0.0)
           }
+        );
 
-          size_t openParen = expressionText.find('(');
+        return true;
+      }
 
-          if (openParen != std::string::npos &&
-            expressionText.back() == ')') {
+      if (
+        std::isdigit(
+          static_cast<unsigned char>(
+            expression[position]
+          )
+        ) ||
+        expression[position] == '.'
+      ) {
+        size_t start = position;
 
-            std::string functionName =
-            expressionText.substr(0, openParen);
+        while (
+          position < expression.size() &&
+          (
+            std::isdigit(
+              static_cast<unsigned char>(
+                expression[position]
+              )
+            ) ||
+            expression[position] == '.'
+          )
+        ) {
+          ++position;
+        }
 
-          std::string functionArgument =
-          expressionText.substr(
-            openParen + 1,
-            expressionText.size() - openParen - 2
+        try {
+          double value =
+          std::stod(
+            expression.substr(
+              start,
+              position - start
+            )
           );
 
-          auto ruleEntry = derivativeRules.find(functionName);
+          output = Polynomial(
+            Complex(value, 0.0)
+          );
 
-          if (ruleEntry == derivativeRules.end())
-            return "r not found";
+          return true;
+        }
+        catch (...) {
+          return false;
+        }
+      }
 
-            std::string innerDerivative =
-            differentiate(functionArgument);
+      if (
+        std::isalpha(
+          static_cast<unsigned char>(
+            expression[position]
+          )
+        )
+      ) {
+        size_t start = position;
 
-          if (innerDerivative == "r not found")
-            return innerDerivative;
-
-            if (innerDerivative == "0")
-              return "0";
-
-            if (functionName == "tan")
-              return innerDerivative == "1"
-              ? "sec^2(" + functionArgument + ")"
-              : "sec^2(" + functionArgument + ")*" + innerDerivative;
-
-            if (functionName == "cot")
-              return innerDerivative == "1"
-              ? "-csc^2(" + functionArgument + ")"
-              : "-csc^2(" + functionArgument + ")*" + innerDerivative;
-
-            if (functionName == "sec")
-              return innerDerivative == "1"
-              ? "sec(" + functionArgument + ")*tan(" + functionArgument + ")"
-              : "sec(" + functionArgument + ")*tan(" + functionArgument + ")*" + innerDerivative;
-
-            if (functionName == "csc")
-              return innerDerivative == "1"
-              ? "-csc(" + functionArgument + ")*cot(" + functionArgument + ")"
-              : "-csc(" + functionArgument + ")*cot(" + functionArgument + ")*" + innerDerivative;
-
-            if (functionName == "sinh")
-              return innerDerivative == "1"
-              ? "cosh(" + functionArgument + ")"
-              : "cosh(" + functionArgument + ")*" + innerDerivative;
-
-            if (functionName == "cosh")
-              return innerDerivative == "1"
-              ? "sinh(" + functionArgument + ")"
-              : "sinh(" + functionArgument + ")*" + innerDerivative;
-
-            if (functionName == "tanh")
-              return innerDerivative == "1"
-              ? "sech^2(" + functionArgument + ")"
-              : "sech^2(" + functionArgument + ")*" + innerDerivative;
-
-            if (functionName == "coth")
-              return innerDerivative == "1"
-              ? "-csch^2(" + functionArgument + ")"
-              : "-csch^2(" + functionArgument + ")*" + innerDerivative;
-
-            if (functionName == "sech")
-              return "-sech(" + functionArgument + ")*tanh(" +
-              functionArgument + ")*" + innerDerivative;
-
-            if (functionName == "csch")
-              return "-csch(" + functionArgument + ")*coth(" +
-              functionArgument + ")*" + innerDerivative;
-
-            if (functionName == "exp")
-              return "exp(" + functionArgument + ")*" + innerDerivative;
-
-            if (functionName == "ln")
-              return "(" + innerDerivative + ")/" + functionArgument;
-
-            if (functionName == "log")
-              return "(" + innerDerivative + ")/(" +
-              functionArgument + "*ln(10))";
-
-            if (functionName == "sqrt")
-              return "(" + innerDerivative + ")/(2*sqrt(" +
-              functionArgument + "))";
-
-            if (functionName == "asin")
-              return "(" + innerDerivative + ")/sqrt(1-(" +
-              functionArgument + ")^2)";
-
-            if (functionName == "acos")
-              return "-(" + innerDerivative + ")/sqrt(1-(" +
-              functionArgument + ")^2)";
-
-            if (functionName == "atan")
-              return "(" + innerDerivative + ")/(1+(" +
-              functionArgument + ")^2)";
-
-            if (functionName == "acot")
-              return "-(" + innerDerivative + ")/(1+(" +
-              functionArgument + ")^2)";
-
-            if (functionName == "asec")
-              return "(" + innerDerivative + ")/(abs(" +
-              functionArgument + ")*sqrt((" +
-              functionArgument + ")^2-1))";
-
-            if (functionName == "acsc")
-              return "-(" + innerDerivative + ")/(abs(" +
-              functionArgument + ")*sqrt((" +
-              functionArgument + ")^2-1))";
-
-            if (innerDerivative == "1")
-              return ruleEntry->second + "(" + functionArgument + ")";
-
-            return ruleEntry->second + "(" +
-            functionArgument + ")*" +
-            innerDerivative;
-            }
-
-            size_t variablePosition = expressionText.find('x');
-
-            if (variablePosition == std::string::npos)
-              return "0";
-
-        size_t exponentPosition = expressionText.find('^');
-
-        std::string coefficientText =
-        expressionText.substr(0, variablePosition);
-
-        if (coefficientText.empty() ||
-          coefficientText == "+")
-          coefficientText = "1";
-
-        if (coefficientText == "-")
-          coefficientText = "-1";
-
-        if (!isNumber(coefficientText))
-          return "r not found";
-
-        double coefficientValue =
-        std::stod(coefficientText);
-
-        double powerValue = 1.0;
-
-        if (exponentPosition != std::string::npos) {
-          std::string powerText =
-          expressionText.substr(exponentPosition + 1);
-
-          if (!isNumber(powerText))
-            return "r not found";
-
-          powerValue = std::stod(powerText);
+        while (
+          position < expression.size() &&
+          std::isalpha(
+            static_cast<unsigned char>(
+              expression[position]
+            )
+          )
+        ) {
+          ++position;
         }
 
-        double newCoefficient =
-        coefficientValue * powerValue;
+        std::string name =
+        expression.substr(
+          start,
+          position - start
+        );
 
-        double newPower =
-        powerValue - 1.0;
+        if (name == "pi") {
+          output = Polynomial(
+            Complex(pi, 0.0)
+          );
 
-        if (newCoefficient == 0.0)
-          return "0";
-
-        std::string coefficientOutput =
-        formatNumber(newCoefficient);
-
-        if (newPower == 0.0)
-          return coefficientOutput;
-
-        if (coefficientOutput == "1")
-          coefficientOutput.clear();
-        else if (coefficientOutput == "-1")
-          coefficientOutput = "-";
-
-        if (newPower == 1.0)
-          return coefficientOutput + "x";
-
-        return coefficientOutput +
-        "x^" +
-        formatNumber(newPower);
+          return true;
         }
 
-        inline std::string differentiateTerm(
-          const std::string& expression) {
+        if (name == "e") {
+          output = Polynomial(
+            Complex(e, 0.0)
+          );
 
-          std::string expressionText =
-          removeSpaces(expression);
+          return true;
+        }
 
-          if (expressionText.empty())
-            return "0";
+        return false;
+      }
 
-          if (expressionText.front() == '+')
-            return differentiateTerm(
-              expressionText.substr(1)
-            );
+      return false;
+    };
 
-          if (expressionText.front() == '-')
-            return "-" + differentiateTerm(
-              expressionText.substr(1)
-            );
+    if (!parseExpression(result))
+      return false;
 
-          int plusPosition =
-          findOperator(expressionText, '+');
+    return position == expression.size();
+  }
 
-          if (plusPosition > 0) {
-            return differentiate(
-              expressionText.substr(0, plusPosition)
-            ) + "+" +
-            differentiate(
-              expressionText.substr(plusPosition + 1)
-            );
-          }
+  inline Roots polynomialRoots(
+    const Polynomial& polynomial
+  ) {
+    Polynomial p = polynomial;
 
-          int minusPosition =
-          findOperator(expressionText, '-');
+    p.trim();
 
-          if (minusPosition > 0) {
-            return differentiate(
-              expressionText.substr(0, minusPosition)
-            ) + "-" +
-            differentiate(
-              expressionText.substr(minusPosition + 1)
-            );
-          }
+    int degree = p.degree();
 
-          int multiplyPosition =
-          findOperator(expressionText, '*');
+    if (degree <= 0)
+      return {};
 
-          if (multiplyPosition > 0) {
-            std::string leftSide =
-            expressionText.substr(0, multiplyPosition);
+    if (degree == 1) {
+      Complex a = p.coefficients[1];
+      Complex b = p.coefficients[0];
 
-            std::string rightSide =
-            expressionText.substr(multiplyPosition + 1);
+      if (std::abs(a) < 1e-14)
+        return {};
 
-            std::string leftDerivative =
-            differentiate(leftSide);
+      return {
+        -b / a
+      };
+    }
 
-            std::string rightDerivative =
-            differentiate(rightSide);
+    Complex leading =
+    p.coefficients.back();
 
-            if (leftDerivative == "0")
-              return "(" + leftSide + ")*" + rightDerivative;
+    for (Complex& value : p.coefficients)
+      value /= leading;
 
-            if (rightDerivative == "0")
-              return "(" + leftDerivative + ")*" + rightSide;
+    Roots roots(degree);
 
-            return "(" + leftDerivative + ")*" +
-            rightSide + "+(" +
-            leftSide + ")*(" +
-            rightDerivative + ")";
-          }
+    const double twoPi =
+    2.0 * pi;
 
-          int dividePosition =
-          findOperator(expressionText, '/');
+    double radius = 1.0;
 
-          if (dividePosition > 0) {
-            std::string numerator =
-            expressionText.substr(0, dividePosition);
+    for (int i = 0; i < degree; ++i) {
+      double magnitude =
+      std::abs(p.coefficients[i]);
 
-            std::string denominator =
-            expressionText.substr(dividePosition + 1);
+      radius =
+      std::max(
+        radius,
+        1.0 + magnitude
+      );
+    }
 
-            std::string numeratorDerivative =
-            differentiate(numerator);
+    for (int i = 0; i < degree; ++i) {
+      double angle =
+      twoPi * static_cast<double>(i) /
+      static_cast<double>(degree);
 
-            std::string denominatorDerivative =
-            differentiate(denominator);
+      roots[i] =
+      std::polar(
+        radius,
+        angle
+      );
+    }
 
-            return "((" + numeratorDerivative + ")*" +
-            denominator + "-(" +
-            numerator + ")*(" +
-            denominatorDerivative + "))/(" +
-            denominator + ")^2";
-          }
+    for (int iteration = 0;
+         iteration < 2000;
+    ++iteration) {
+      double maximumChange = 0.0;
 
-          return differentiateFunction(expressionText);
-          }
+      for (int i = 0; i < degree; ++i) {
+        Complex denominator(1.0, 0.0);
 
-          inline std::string differentiate(
-            const std::string& expression) {
+        for (int j = 0; j < degree; ++j) {
+          if (i != j)
+            denominator *= roots[i] - roots[j];
+        }
 
-            std::string expressionText =
-            removeSpaces(expression);
+        if (std::abs(denominator) < 1e-30)
+          denominator = Complex(1e-30, 0.0);
 
-            if (expressionText.empty())
-              return "0";
+        Complex correction =
+        p.evaluate(roots[i]) /
+        denominator;
 
-            if (expressionText.front() == '+' ||
-              expressionText.front() == '-') {
+        roots[i] -= correction;
 
-              if (expressionText.front() == '-')
-                return "-" + differentiate(
-                  expressionText.substr(1)
-                );
+        maximumChange =
+        std::max(
+          maximumChange,
+          std::abs(correction)
+        );
+      }
 
-              return differentiate(
-                expressionText.substr(1)
-              );
+      if (maximumChange < 1e-12)
+        break;
+    }
+
+    for (Complex& root : roots) {
+      if (std::abs(root.real()) < 1e-10)
+        root.real(0.0);
+
+      if (std::abs(root.imag()) < 1e-10)
+        root.imag(0.0);
+    }
+
+    std::sort(
+      roots.begin(),
+              roots.end(),
+              [](const Complex& a, const Complex& b) {
+                if (std::abs(a.real() - b.real()) > 1e-10)
+                  return a.real() < b.real();
+
+                return a.imag() < b.imag();
               }
+    );
 
-              std::vector<std::string> terms =
-              splitTerms(expressionText);
+    return roots;
+  }
 
-              if (terms.size() > 1) {
-                std::string resultText;
+  inline Roots roots(
+    const std::string& expression
+  ) {
+    Polynomial polynomial;
 
-                for (const std::string& term : terms) {
-                  std::string derivative =
-                  differentiateTerm(term);
+    if (!parsePolynomial(expression, polynomial))
+      throw std::runtime_error(
+        "bad input"
+      );
 
-                  if (derivative == "r not found")
-                    return derivative;
+    return polynomialRoots(polynomial);
+  }
 
-                  if (derivative == "0")
-                    continue;
-
-                  if (resultText.empty())
-                    resultText = derivative;
-                  else if (!derivative.empty() &&
-                    derivative.front() == '-')
-                    resultText += derivative;
-                  else
-                    resultText += "+" + derivative;
-                }
-
-                return resultText.empty()
-                ? "0"
-                : resultText;
-              }
-
-              return differentiateTerm(expressionText);
-            }
-
-            inline std::string integrateTerm(
-              const std::string& expression) {
-
-              std::string expressionText =
-              removeSpaces(expression);
-
-              if (expressionText.empty())
-                return "0";
-
-              if (expressionText.front() == '-')
-                return "-" + integrateTerm(
-                  expressionText.substr(1)
-                );
-
-              if (expressionText.front() == '+')
-                return integrateTerm(
-                  expressionText.substr(1)
-                );
-
-              int multiplyPosition =
-              findOperator(expressionText, '*');
-
-              if (multiplyPosition > 0) {
-                std::string leftSide =
-                expressionText.substr(0, multiplyPosition);
-
-                std::string rightSide =
-                expressionText.substr(multiplyPosition + 1);
-
-                if (isNumber(leftSide)) {
-                  std::string resultText =
-                  integrateTerm(rightSide);
-
-                  if (resultText == "r not found")
-                    return resultText;
-
-                  if (resultText == "0")
-                    return "0";
-
-                  return leftSide + "*" + resultText;
-                }
-              }
-
-              int dividePosition =
-              findOperator(expressionText, '/');
-
-              if (dividePosition > 0)
-                return "r not found";
-
-              size_t openParen =
-              expressionText.find('(');
-
-              if (openParen != std::string::npos &&
-                expressionText.back() == ')') {
-
-                std::string functionName =
-                expressionText.substr(0, openParen);
-
-              std::string functionArgument =
-              expressionText.substr(
-                openParen + 1,
-                expressionText.size() - openParen - 2
-              );
-
-              auto ruleEntry =
-              integralRules.find(functionName);
-
-              if (ruleEntry == integralRules.end())
-                return "r not found";
-
-                std::string innerDerivative =
-                differentiate(functionArgument);
-
-              if (innerDerivative == "r not found" ||
-                innerDerivative == "0")
-                return "r not found";
-
-              if (innerDerivative == "1")
-                return replaceArgument(
-                  ruleEntry->second,
-                  functionArgument
-                );
-
-              if (isNumber(innerDerivative)) {
-                double derivativeValue =
-                std::stod(innerDerivative);
-
-                if (derivativeValue == 0.0)
-                  return "0";
-
-                return formatNumber(1.0 / derivativeValue) +
-                "*" +
-                ruleEntry->second;
-              }
-
-              return "r not found";
-                }
-
-                size_t variablePosition =
-                expressionText.find('x');
-
-                if (variablePosition == std::string::npos) {
-                  if (!isNumber(expressionText))
-                    return "r not found";
-
-                  double constantValue =
-                  std::stod(expressionText);
-
-                  return formatNumber(constantValue) + "*x";
-                }
-
-                size_t exponentPosition =
-                expressionText.find('^');
-
-                std::string coefficientText =
-                expressionText.substr(0, variablePosition);
-
-                if (coefficientText.empty() ||
-                  coefficientText == "+")
-                  coefficientText = "1";
-
-                if (coefficientText == "-")
-                  coefficientText = "-1";
-
-              if (!isNumber(coefficientText))
-                return "r not found";
-
-              double coefficientValue =
-              std::stod(coefficientText);
-
-              double powerValue = 1.0;
-
-              if (exponentPosition != std::string::npos) {
-                std::string powerText =
-                expressionText.substr(exponentPosition + 1);
-
-                if (!isNumber(powerText))
-                  return "r not found";
-
-                powerValue = std::stod(powerText);
-              }
-
-              if (powerValue == -1.0) {
-                std::string coefficientOutput =
-                formatNumber(coefficientValue);
-
-                if (coefficientOutput == "1")
-                  return "ln(abs(x))";
-
-                if (coefficientOutput == "-1")
-                  return "-ln(abs(x))";
-
-                return coefficientOutput + "*ln(abs(x))";
-              }
-
-              double newPower =
-              powerValue + 1.0;
-
-              if (newPower == 0.0)
-                return "r not found";
-
-              double newCoefficient =
-              coefficientValue / newPower;
-
-              std::string coefficientOutput =
-              formatNumber(newCoefficient);
-
-              if (newPower == 1.0)
-                return coefficientOutput + "*x";
-
-              if (coefficientOutput == "1")
-                coefficientOutput.clear();
-              else if (coefficientOutput == "-1")
-                coefficientOutput = "-";
-
-              return coefficientOutput +
-              "x^" +
-              formatNumber(newPower);
-              }
-
-              inline std::string integrate(
-                const std::string& expression) {
-
-                std::string expressionText =
-                removeSpaces(expression);
-
-                if (expressionText.empty())
-                  return "C";
-
-                std::vector<std::string> terms =
-                splitTerms(expressionText);
-
-                std::string resultText;
-
-                for (const std::string& term : terms) {
-                  std::string integratedTerm =
-                  integrateTerm(term);
-
-                  if (integratedTerm == "r not found")
-                    return integratedTerm;
-
-                  if (integratedTerm == "0")
-                    continue;
-
-                  if (resultText.empty())
-                    resultText = integratedTerm;
-                  else if (!integratedTerm.empty() &&
-                    integratedTerm.front() == '-')
-                    resultText += integratedTerm;
-                  else
-                    resultText += "+" + integratedTerm;
-                }
-
-                return resultText.empty()
-                ? "C"
-                : resultText + "+C";
-                }
+}
