@@ -1,7 +1,0 @@
-0000000000000000000000000000000000000000 e7f2b3b7e8f16a4dce6f37ddd6246a841453c219 ellpse <elipesavento@gmail.com> 1791223062 -0400	clone: from https://github.com/ellpse/CymboliC
-e7f2b3b7e8f16a4dce6f37ddd6246a841453c219 ff2ea085ef54b59a91420c5635c9e9f268cdcfd7 ellpse <elipesavento@gmail.com> 1791223120 -0400	commit: added .h
-ff2ea085ef54b59a91420c5635c9e9f268cdcfd7 e01a7a83a13cd6b78391465e6bd4af55450f1f2f ellpse <elipesavento@gmail.com> 1791223643 -0400	commit: added integration
-e01a7a83a13cd6b78391465e6bd4af55450f1f2f fc92a9418db47328b32b2155afb6e26400031ce0 ellpse <elipesavento@gmail.com> 1791223839 -0400	commit: added readme
-fc92a9418db47328b32b2155afb6e26400031ce0 31cd75b634cfc4f75fed6d3b99dcc1dd640790a0 ellpse <elipesavento@gmail.com> 1791224802 -0400	commit: tidied up code
-31cd75b634cfc4f75fed6d3b99dcc1dd640790a0 0549dc1918ee40987d29e3fc6954ca4f77f0011a ellpse <elipesavento@gmail.com> 1791224971 -0400	commit: edited readme
-0549dc1918ee40987d29e3fc6954ca4f77f0011a 174b20058ce46688a335ecf94eb43617d66b9220 ellpse <elipesavento@gmail.com> 1791296491 -0400	commit: added definite intergral, namespace calculus
