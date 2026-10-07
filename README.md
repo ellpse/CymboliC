@@ -15,11 +15,11 @@ CymboliC is a lightweight C++ symbolic algebra and calculus library. It started 
 
 ## Usage
 
-Include `CymboliC.h` and use the `cymbolic` namespace:
+Include `cymbolic/cymbolic.h` and use the `cymbolic` namespace:
 
 ```cpp
 #include <iostream>
-#include "CymboliC.h"
+#include <cymbolic/cymbolic.h>
 
 int main() {
     std::cout << cymbolic::differentiate("x^2") << '\n';
