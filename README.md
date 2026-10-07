@@ -11,7 +11,8 @@ Differentiation, function evaluation, integration (fully analytic, definite or i
 First, include the main header, CymboliC.h, and the library is already set up. It uses the namespace cymbolic. 
 
 for integrals, here is the syntax.
-\(\int_{a}^{b} (3x^2 + 2x + 5) \, dx = \left[ x^3 + x^2 + 5x \right]_\){a}^{b}
+$$\int_{a}^{b} (3x^2 + 2x + 5) \, dx = \left[ x^3 + x^2 + 5x \right]_{a}^{b}$$
+
 
 ## License
 
