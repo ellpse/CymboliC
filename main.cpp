@@ -1,8 +1,7 @@
 #include <iostream>
-#include <iomanip>
 #include "CymboliC.h"
 
 int main() {
-  std::cout << std::setprecision(17) << cymbolic::defintegral("sqrt(x)", 0.0, 3.0, true) << '\n';
+  std::cout << cymbolic::integrate("2*sqrt(1-x^2)", -1, 1, true);
   return 0;
 }
