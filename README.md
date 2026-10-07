@@ -27,7 +27,7 @@ int main() {
 }
 ```
 
-Expressions use `x` as the variable and require explicit multiplication, as implicit multiplication obliterates up my tokenizer
+Expressions use `x` as the variable and require explicit multiplication, as implicit multiplication obliterates my tokenizer
 
 ```text
 2*x
