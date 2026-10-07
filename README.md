@@ -13,6 +13,14 @@ CymboliC is a lightweight C++ symbolic algebra and calculus library. It started 
 * Exact and closed-form calculations
 * More...
 
+## Install
+
+run 
+```bash
+chmod +x install.sh
+sudo ./install.sh
+```
+
 ## Usage
 
 Include `cymbolic/cymbolic.h` and use the `cymbolic` namespace:
