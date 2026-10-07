@@ -1,21 +1,29 @@
 # CymboliC
 
-CymboliC was created because I didn't like the other C++ symbolic math libraries. I had previously written a calculus engine, and i build off of that. 
+CymboliC was created because I didn't like the other C++ symbolic math libraries. I had previously written a calculus engine, and I built off of that.
 
 ## Features
 
-Differentiation, function evaluation, integration (fully analytic, definite or indefinite), finding the roots of functions, and more.
+* Differentiation
+* Function evaluation
+* Integration (fully analytic, definite or indefinite)
+* Finding the roots of functions
+* And more...
 
 ## Usage
 
-First, include the main header, CymboliC.h, and the library is already set up. It uses the namespace cymbolic. 
+First, include the main header, `CymboliC.h`, and the library is already set up. It uses the namespace `cymbolic`.
 
-for integrals, here is the syntax.
+For integrals, here is the math syntax:
+
 \[\int_{a}^{b} (3x^2 + 2x + 5) \ dx\]
-is equivalent to 
+
+It is equivalent to this C++ code:
+
 ```cpp
-cymbolic::integrate("3*x^2+2*x+5", a, b);
-//for it to show the closed form, 
+cymbolic::integrate("3*x^2+2*x+5", a, b); 
+
+// For it to show the closed form:
 cymbolic::integrate("3*x^2+2*x+5", a, b, true);
 ```
 
