@@ -1,15 +1,15 @@
 # CymboliC
 
-CymboliC is a lightweight C++ symbolic calculus library. It was created because I didn't like the other C++ symbolic math libraries, so I built my own calculus engine and expanded it from there.
+CymboliC is a lightweight C++ symbolic algebra and calculus library. It started as a simple antiderivative calculator, and I build off of it.
 
 ## Features
 
 * Differentiation
+* Symbolic integration
+* Definite integrals
 * Function evaluation
-* Analytic integration
-* Definite and indefinite integrals
 * Limits
-* Finding function roots
+* Function roots
 * Exact and closed-form calculations
 * More...
 
@@ -23,11 +23,10 @@ Include `CymboliC.h` and use the `cymbolic` namespace:
 
 int main() {
     std::cout << cymbolic::differentiate("x^2") << '\n';
-    return 0;
 }
 ```
 
-Expressions use `x` as the variable and require explicit multiplication, as implicit multiplication obliterates my tokenizer
+Expressions use `x` as the variable and require explicit multiplication:
 
 ```text
 2*x
@@ -35,7 +34,7 @@ Expressions use `x` as the variable and require explicit multiplication, as impl
 x*(x+1)
 ```
 
-rather than:
+Not:
 
 ```text
 2x
@@ -43,109 +42,71 @@ rather than:
 x(x+1)
 ```
 
-The current constants are `pi` and `e`.
+I tried to add implicit multiplication, but it obliterated my tokenizer. greater programmers are welcome to fix this!
 
-### Differentiation
+Constants include `pi` and `e`.
 
-for:
-
-```cpp
-cymbolic::differentiate("x^2");
-```
-
-the written equivalent is:
-
-```math
-\frac{d}{dx}(x^2)
-```
-
-other examples:
+## Differentiation
 
 ```cpp
-cymbolic::differentiate("2*x^3");
-cymbolic::differentiate("sin(x)");
-cymbolic::differentiate("x*sin(x)");
-cymbolic::differentiate("x^2+sin(x)");
+cymbolic::differentiate("x^2");          // 2*x
+cymbolic::differentiate("2*x^3");        // 6*x^2
+cymbolic::differentiate("sin(x)");       // cos(x)
+cymbolic::differentiate("x*sin(x)");     // ...
+cymbolic::differentiate("x^2+sin(x)");   // idk what this is xD
 ```
 
+Equivalent to:
+
 ```math
-\frac{d}{dx}(2x^3)
-\qquad
-\frac{d}{dx}(\sin x)
-\qquad
-\frac{d}{dx}(x\sin x)
-\qquad
+\frac{d}{dx}(x^2),\quad
+\frac{d}{dx}(2x^3),\quad
+\frac{d}{dx}(\sin x),\quad
+\frac{d}{dx}(x\sin x),\quad
 \frac{d}{dx}(x^2+\sin x)
 ```
 
-### Integration
-
-code:
+## Integration
 
 ```cpp
 cymbolic::integrate("x^2");
-```
-
-the written equivalent:
-
-```math
-\int x^2\,dx
-```
-
-other examples:
-
-```cpp
 cymbolic::integrate("sin(x)");
 cymbolic::integrate("exp(x)");
 cymbolic::integrate("sqrt(x)");
 cymbolic::integrate("sin(2*x)");
 ```
 
+Equivalent to:
+
 ```math
-\int \sin(x)\,dx
-\qquad
-\int e^x\,dx
-\qquad
-\int \sqrt{x}\,dx
-\qquad
-\int \sin(2x)\,dx
+\int x^2\,dx,\quad
+\int\sin(x)\,dx,\quad
+\int e^x\,dx,\quad
+\int\sqrt{x}\,dx,\quad
+\int\sin(2x)\,dx
 ```
 
-The result of an indefinite integral appends `+C`
+Indefinite integrals include `+C`.
 
-closed form output can be requested with `true`:
+Closed-form output can be requested with `true`:
 
 ```cpp
 cymbolic::integrate("x^2", true);
 ```
 
-### Definite Integrals
+## Definite Integrals
 
-code:
+Pass the lower and upper bounds directly:
 
 ```cpp
 cymbolic::integrate("x^2", 0, 3);
 ```
 
-written equivalent:
-
 ```math
-\int_0^3 x^2\,dx
+\int_0^3 x^2\,dx = 9
 ```
 
-for example:
-
-```cpp
-std::cout << cymbolic::integrate("x^2", 0, 3) << '\n';
-```
-
-returns:
-
-```text
-9
-```
-
-other examples:
+More examples:
 
 ```cpp
 cymbolic::integrate("x", 0, 5);
@@ -154,70 +115,46 @@ cymbolic::integrate("sin(x)", 0, pi);
 cymbolic::integrate("exp(x)", 0, 1);
 ```
 
-```math
-\int_0^5 x\,dx
-\qquad
-\int_{4.5}^{3.14}2x^2\,dx
-\qquad
-\int_0^\pi\sin(x)\,dx
-\qquad
-\int_0^1e^x\,dx
-```
-
-Closed-form output can also be requested:
+Closed-form output:
 
 ```cpp
 cymbolic::integrate("x^2", 0, 3, true);
 ```
 
-`defintegral` is also available for compatibility:
+`defintegral` is also available:
 
 ```cpp
 cymbolic::defintegral("x^2", 0, 3);
 ```
 
-### Evaluation
+## Evaluation
 
-code:
+Evaluate an expression at a given value of `x`:
 
 ```cpp
 cymbolic::evaluate("x^2+2*x", 5);
+cymbolic::evaluate("sin(x)", 5);
+cymbolic::evaluate("sqrt(x)", 5);
+cymbolic::evaluate("exp(x)", 5);
 ```
 
-written equivalent:
+For example:
 
 ```math
 x^2+2x\quad\text{at }x=5
 ```
 
-other examples:
+Closed-form evaluation can be requested with `true`:
 
 ```cpp
-cymbolic::evaluate("sin(x)", 5);
-cymbolic::evaluate("sqrt(x)", 5);
-cymbolic::evaluate("exp(x)", 5);
 cymbolic::evaluate("x^2", 5, true);
 ```
 
-```math
-\sin(x)\quad\text{at }x=5
-\qquad
-\sqrt{x}\quad\text{at }x=5
-\qquad
-e^x\quad\text{at }x=5
-\qquad
-x^2\quad\text{at }x=5
-```
-
-### Limits
-
-code:
+## Limits
 
 ```cpp
 cymbolic::limit("1/x", 0);
 ```
-
-written equivalent:
 
 ```math
 \lim_{x\to0}\frac{1}{x}
@@ -230,20 +167,14 @@ cymbolic::limitleft("1/x", 0);
 cymbolic::limitright("1/x", 0);
 ```
 
-```math
-\lim_{x\to0^-}\frac{1}{x}
-\qquad
-\lim_{x\to0^+}\frac{1}{x}
-```
-
-the direction can also be specified directly:
+specify the direction directly:
 
 ```cpp
 cymbolic::limit("1/x", 0, "left", true);
 cymbolic::limit("1/x", 0, "right", true);
 ```
 
-limits at infinity are supported:
+limits at infinity:
 
 ```cpp
 cymbolic::limit("1/x", "infinity", "right", true);
@@ -251,26 +182,14 @@ cymbolic::limit("1/x", "-infinity", "left", true);
 ```
 
 ```math
-\lim_{x\to\infty}\frac{1}{x}
+\lim_{x\to\infty}\frac1x
 \qquad
-\lim_{x\to-\infty}\frac{1}{x}
+\lim_{x\to-\infty}\frac1x
 ```
 
-### Function Roots
+## Function Roots
 
-code:
-
-```cpp
-auto roots = cymbolic::roots("x^2-4");
-```
-
-written equivalent:
-
-```math
-x^2-4=0
-```
-
-for example:
+Find the roots of a function by solving `f(x) = 0`:
 
 ```cpp
 auto roots = cymbolic::roots("x^2-4");
@@ -279,15 +198,20 @@ for (const auto& root : roots)
     std::cout << root << '\n';
 ```
 
-other examples:
+Examples:
 
 ```cpp
+cymbolic::roots("x^2-4");
 cymbolic::roots("x^2+2*x-3");
 cymbolic::roots("x^3-x");
 cymbolic::roots("x^4-16");
 ```
 
+Equivalent equations:
+
 ```math
+x^2-4=0
+\qquad
 x^2+2x-3=0
 \qquad
 x^3-x=0
@@ -295,18 +219,22 @@ x^3-x=0
 x^4-16=0
 ```
 
-Polynomial roots are solved symbolically when possible, with numerical methods available as a fallback.
+polynomial roots are solved symbolically when possible, but numerical methods are used as a fallback.
 
-Closed-form processing can be requested:
+closed form:
 
 ```cpp
 cymbolic::roots("x^2-4", true);
 ```
 
+## Contributors
+
+Contributors are welcome! feel welcome to fix my crappy programming.
+
 ## License
 
-This is free and unencumbered software released into the public domain.
+CymboliC is free and unencumbered software released into the public domain.
 
-Anyone is free to copy, modify, publish, use, compile, sell, or distribute this software, either in source code or compiled binary form, for any purpose, commercial or non-commercial, and by any means.
+You may copy, modify, publish, use, compile, sell, or distribute it for any purpose, commercial or non-commercial.
 
-For more information, see the [Unlicense](https://unlicense.org) website or the accompanying `LICENSE` file.
+See the [Unlicense](https://unlicense.org) website or the accompanying `LICENSE` file.
