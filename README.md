@@ -11,14 +11,13 @@ Differentiation, function evaluation, integration (fully analytic, definite or i
 First, include the main header, CymboliC.h, and the library is already set up. It uses the namespace cymbolic. 
 
 for integrals, here is the syntax.
-$$\int_{a}^{b} (3x^2 + 2x + 5) \ dx$$
+\[\int_{a}^{b} (3x^2 + 2x + 5) \ dx\]
 is equivalent to 
-'''C++
+```cpp
 cymbolic::integrate("3*x^2+2*x+5", a, b);
 //for it to show the closed form, 
 cymbolic::integrate("3*x^2+2*x+5", a, b, true);
-'''
-
+```
 
 ## License
 
