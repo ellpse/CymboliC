@@ -16,7 +16,9 @@ First, include the main header, `CymboliC.h`, and the library is already set up.
 
 For integrals, here is the math syntax:
 
-\[\int_{a}^{b} (3x^2 + 2x + 5) \ dx\]
+```math
+\int_{a}^{b} (3x^2 + 2x + 5) \ dx
+```
 
 It is equivalent to this C++ code:
 
