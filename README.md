@@ -52,7 +52,7 @@ x(x+1)
 
 I tried to add implicit multiplication, but it obliterated my tokenizer. greater programmers are welcome to fix this!
 
-Constants include `pi` and `e`.
+used constants are just `pi` and `e`.
 
 ## Differentiation
 
@@ -94,9 +94,7 @@ Equivalent to:
 \int\sin(2x)\,dx
 ```
 
-Indefinite integrals include `+C`.
-
-Closed-form output can be requested with `true`:
+indefinite integrals include `+C`.
 
 ```cpp
 cymbolic::integrate("x^2", true);
@@ -104,7 +102,7 @@ cymbolic::integrate("x^2", true);
 
 ## Definite Integrals
 
-Pass the lower and upper bounds directly:
+pass the lower and upper bounds directly:
 
 ```cpp
 cymbolic::integrate("x^2", 0, 3);
@@ -130,6 +128,7 @@ cymbolic::integrate("x^2", 0, 3, true);
 ```
 
 `defintegral` is also available:
+it does the same thing as `integrate`. it is an artifact from an older version.
 
 ```cpp
 cymbolic::defintegral("x^2", 0, 3);

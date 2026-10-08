@@ -1,7 +1,12 @@
 #include <iostream>
-#include "include/cymbolic/CymboliC.h"
+#include <cymbolic/CymboliC.h>
 
 int main() {
-  std::cout << cymbolic::integrate("2*sqrt(1-x^2)", -1, 1, true);
+  auto roots = cymbolic::roots("15*x^2-10*x+3", true);
+  for (const auto& root : roots) {
+    std::cout << root << " ";
+  }
+  std::cout << "\n";
+
   return 0;
 }
