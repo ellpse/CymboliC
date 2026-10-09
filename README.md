@@ -1,6 +1,6 @@
 # CymboliC
 
-CymboliC is a lightweight C++ symbolic algebra and calculus library. It started as a simple antiderivative calculator, and I build off of it.
+CymboliC is a lightweight C++ symbolic algebra and calculus library. It started as a simple antiderivative calculator, and I just kept building off of it. It has gotten to a point where I would love to share it with the public, if anyone wants to use it of course.
 
 ## Features
 
