@@ -2,6 +2,7 @@
 #include <cymbolic/CymboliC.h>
 
 int main() {
-  std::cout << cymbolic::integrate("x^2", 0, 4, true) << '\n';
+  auto roots = cymbolic::roots("15*x^2-10*x+3", true);
+  std::cout << cymbolic::latex(roots[1]);
   return 0;
 }

@@ -219,7 +219,7 @@ namespace cymbolic {
         bool
     );
 
-    inline std::string rationalDefiniteIntegralClosed(
+    inline std::string rationalDefiniteIntegralClosed( //sigh...
         const std::string&,
         float,
         float

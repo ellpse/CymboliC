@@ -170,3 +170,4 @@
 #include "cymbolic_limits.h"
 #include "cymbolic_rational.h"
 #include "cymbolic_integration.h"
+#include "cymbolic_latex.h"
