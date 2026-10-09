@@ -21,4 +21,4 @@ cp -R "$SRC_DIR" "/usr/local/include/"
 find "$INSTALL_DIR" -type d -exec chmod 755 {} +
 find "$INSTALL_DIR" -type f -exec chmod 644 {} +
 
-echo "installation complete!"
+echo "CymboliC has been installed to /usr/local/include/cymbolic/CymboliC.h"
