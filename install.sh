@@ -21,7 +21,7 @@ echo "installing headers to /usr/local/include..."
 
 for INSTALL_DIR in "${COMPILER_PATHS[@]}"; do
     if [ -d "$INSTALL_DIR" ]; then
-        echo "installing to root of $INSTALL_DIR..."
+        echo "installing to $INSTALL_DIR..."
         cp -R "$SRC_DIR"/* "$INSTALL_DIR/"
         cd "$SRC_DIR"
         for item in *; do
