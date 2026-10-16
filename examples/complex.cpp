@@ -1,5 +1,5 @@
 #include <iostream>
-#include <cymbolic/CymboliC.h>
+#include <cymbolic>
 
 int main() {
     std::cout << cymbolic::latex("(34^2)/sqrt(x^2)");
