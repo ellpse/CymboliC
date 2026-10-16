@@ -2,7 +2,7 @@
 set -e
 
 SRC_DIR="include"
-INSTALL_DIR="/usr/local/include/cymbolic"
+INSTALL_DIR="/usr/local/include"
 if [ ! -d "$SRC_DIR" ]; then
     echo "install error: directory $SRC_DIR not found"
     exit 1
@@ -21,5 +21,5 @@ cp -R "$SRC_DIR" "/usr/local/include/"
 find "$INSTALL_DIR" -type d -exec chmod 755 {} +
 find "$INSTALL_DIR" -type f -exec chmod 644 {} +
 
-echo "CymboliC has been installed to /usr/local/include/cymbolic/CymboliC.h"
+echo "CymboliC has been installed to /usr/local/include/cymbolic"
 echo "Happy Mathing!"
