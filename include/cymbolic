@@ -124,7 +124,7 @@
  * limit("1/x", "-infinity", "right", true)
  *
  * function roots
- * for quartics and under, it is guaranteed to be exact, or at least symbolically done. I use a numeric solution as a fallback. kind of cheating, but it is ok.
+ * for quartics and under, it is guaranteed to be symbolic. We all know you can't do that for quintics and above, so it uses a numeric solution as a fallback.
  * roots("x^2-4")
  * roots("x^2-4", true)
  *
@@ -133,7 +133,7 @@
  * x^3/3+C
  *
  * definite integration returns a number, this isn't guaranteed if you pass true into the function.
- * defintegrate is an artifact from before i merged it into integrate, so it really doesnt matter if you use it.
+ * defintegrate is an artifact from before i merged it into integrate, so it really doesnt matter if you use it, or integrate()
  * integrate("x^2", 0, 3)
  * 9
  *
@@ -152,7 +152,7 @@
  * all function arguments are strings.
  * all numeric evaluation types are floats.
  *
- * implicit multiplication is BANNED. it completely decimates up my tokenizer, so use these:
+ *   !!!! IMPORTANT !!!!! implicit multiplication is forbidden. it completely decimates up my tokenizer, so use these:
  * 2*x
  * 3*sin(x)
  *
@@ -160,7 +160,6 @@
  * 2x
  * 3sin(x)
  */
-
 #include "cymbolic_core.h"
 #include "cymbolic_exact.h"
 #include "cymbolic_evaluation.h"
