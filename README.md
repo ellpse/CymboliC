@@ -11,7 +11,8 @@ CymboliC is a lightweight C++ symbolic algebra and calculus library. It started 
 * Limits
 * Function roots
 * Exact and closed-form calculations
-* More...
+* LaTeX conversion!! (v2.7+)
+* more...
 
 ## Install
 
@@ -23,11 +24,11 @@ sudo ./install.sh
 
 ## Usage
 
-Include `cymbolic/cymbolic.h` and use the `cymbolic` namespace:
+Include `cymbolic` and use the `cymbolic` namespace:
 
 ```cpp
 #include <iostream>
-#include <cymbolic/cymbolic.h>
+#include <cymbolic>
 
 int main() {
     std::cout << cymbolic::differentiate("x^2") << '\n';
@@ -232,6 +233,22 @@ closed form:
 
 ```cpp
 cymbolic::roots("x^2-4", true);
+```
+
+## LaTeX conversion!!
+
+to start, we use something like
+```cpp
+#include <iostream>
+#include <cymbolic>
+#include <string>
+
+int main() {
+    std::string input = cymbolic::integrate("x^2-4", true);
+    std::string output = cymbolic::latex(output);
+    std::cout << output << '\n';
+    return 0;
+}
 ```
 
 ## Contributors
