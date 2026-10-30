@@ -160,13 +160,13 @@
  * 2x
  * 3sin(x)
  */
-#include "cymbolic_core.h"
-#include "cymbolic_exact.h"
-#include "cymbolic_evaluation.h"
-#include "cymbolic_differentiation.h"
-#include "cymbolic_polynomial.h"
-#include "cymbolic_roots.h"
-#include "cymbolic_limits.h"
-#include "cymbolic_rational.h"
-#include "cymbolic_integration.h"
-#include "cymbolic_latex.h"
+#include "cymbolicheaders/cymbolic_core.h"
+#include "cymbolicheaders/cymbolic_exact.h"
+#include "cymbolicheaders/cymbolic_evaluation.h"
+#include "cymbolicheaders/cymbolic_differentiation.h"
+#include "cymbolicheaders/cymbolic_polynomial.h"
+#include "cymbolicheaders/cymbolic_roots.h"
+#include "cymbolicheaders/cymbolic_limits.h"
+#include "cymbolicheaders/cymbolic_rational.h"
+#include "cymbolicheaders/cymbolic_integration.h"
+#include "cymbolicheaders/cymbolic_latex.h"
